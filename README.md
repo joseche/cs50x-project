@@ -1,2 +1,4 @@
-# cs50x-project
-NASA A picture of the day - Image Gallery manager
+# NASA Image Manager
+#### Video Demo:  <URL HERE>
+#### Description:
+TODO

@@ -1,0 +1,120 @@
+<html>
+
+<head>
+  <title>A picture of the day</title>
+  <link href="/static/main.css" type="text/css" rel="stylesheet" />
+  <link rel="stylesheet" type="text/css" href="/static/bvambient.css">
+
+  <script src="/static/main.js"></script>
+  <script src="/static/bvambient.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+
+      const $ = function (id) {
+        return document.getElementById(id);
+      };
+      $("year").onchange = myCalendar;
+      $("month").onchange = myCalendar;
+      myCalendar();
+
+      const select_year = document.getElementById("year");
+      const currentYear = new Date().getFullYear();
+
+      for (let year = 2015; year <= currentYear; year++) {
+        let option = document.createElement("option");
+        option.value = year;
+        option.textContent = year;
+        if (year === currentYear) {
+          option.selected = true;
+        }
+        select_year.appendChild(option);
+      }
+
+      const select_month = document.getElementById("month");
+      const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+      const currentMonth = new Date().getMonth();
+
+      months.forEach((month, index) => {
+        let option = document.createElement("option");
+        option.value = index + 1;
+        option.textContent = month;
+        if (index === currentMonth) {
+          option.selected = true;
+        }
+        select_month.appendChild(option);
+      });
+
+
+
+      var all_stars = new BVAmbient(
+        "stars", // selector
+        100, //particle number
+        10,// fps
+        1200000, //max trans speed
+        100000,  //min trans speed
+        5, // par max wid
+        1, // par min wid
+        50, // par radius
+        false, // par col change
+        "#d27d48", // par background
+        {   // par image
+          image: false,
+          src: ""
+        },
+        [   // responsive
+          {
+            breakpoint: 768,
+            settings: {
+              particle_number: "15"
+            }
+          },
+          {
+            breakpoint: 480,
+            settings: {
+              particle_number: "10"
+            }
+          }
+        ],
+        true, // opacity
+        true // refresh on focus
+      );
+    });
+  </script>
+
+</head>
+
+<body>
+  <div id="stars">
+    <section>
+      <table id="calendar">
+        <div class='data'>
+          <select id="year"></select>
+          <select id="month"></select>
+
+
+          <!-- <input type='reset' id='reset' value='Clear Calendar' />
+          <input type='submit' id='create' value='Make Calendar' /> -->
+
+          <input type='reset' id='topline' value="NASA's Astronomy Picture of the Day" />
+        </div>
+        <thead>
+          <tr>
+            <th id="dayOfWeek">Sunday</th>
+            <th id="dayOfWeek">Monday</th>
+            <th id="dayOfWeek">Tuesday</th>
+            <th id="dayOfWeek">Wednesday</th>
+            <th id="dayOfWeek">Thursday</th>
+            <th id="dayOfWeek">Friday</th>
+            <th id="dayOfWeek">Saturday</th>
+          </tr>
+        </thead>
+        <tbody id="cal">
+          <tr></tr>
+          <tr></tr>
+          <tr></tr>
+          <tr></tr>
+        </tbody>
+      </table>
+  </div>
+  </div>
+</body>
