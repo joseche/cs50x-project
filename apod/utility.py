@@ -17,40 +17,6 @@ BASE = "https://apod.nasa.gov/apod/"
 http = urllib3.PoolManager()
 
 
-# function for getting video thumbnails
-def _get_thumbs(data):
-    global video_thumb
-    if "youtube" in data or "youtu.be" in data:
-        # get ID from YouTube URL
-        youtube_id_regex = re.compile(
-            "(?:(?<=(v|V)/)|(?<=be/)|(?<=(\?|\&)v=)|(?<=embed/))([\w-]+)"
-        )
-        video_id = youtube_id_regex.findall(data)
-        video_id = (
-            "".join("".join(elements) for elements in video_id)
-            .replace("?", "")
-            .replace("&", "")
-        )
-        # get URL of thumbnail
-        video_thumb = f"https://img.youtube.com/vi/{video_id}/0.jpg"
-    elif "vimeo" in data:
-        # get ID from Vimeo URL
-        vimeo_id_regex = re.compile("(?:/video/)(\d+)")
-        vimeo_id = vimeo_id_regex.findall(data)[0]
-        # make an API call to get thumbnail URL
-        vimeo_request = http.request(
-            "GET", f"https://vimeo.com/api/v2/video/{vimeo_id}.json"
-        )
-        data = json.loads(vimeo_request.data.decode("utf-8"))
-        video_thumb = data[0]["thumbnail_large"]
-    else:
-        # the thumbs parameter is True, but the APOD for the date
-        # is not a video, output nothing
-        video_thumb = ""
-
-    return video_thumb
-
-
 # function that returns only last URL if there are multiple
 # URLs stacked together
 def _get_last_url(data):
@@ -58,7 +24,7 @@ def _get_last_url(data):
     return regex.findall(data)[0]
 
 
-def _get_apod_chars(dt, thumbs):
+def _get_apod_chars(dt):
     media_type = "image"
     if dt:
         date_str = dt.strftime("%y%m%d")
@@ -70,15 +36,6 @@ def _get_apod_chars(dt, thumbs):
 
     if res.status_code == 404:
         return None
-        # LOG.error(f'No APOD entry for URL: {apod_url}')
-        # default_obj_path = 'static/default_apod_object.json'
-        # LOG.debug(f'Loading default APOD response from {default_obj_path}')
-        # with open(default_obj_path, 'r') as f:
-        #     default_obj_props = json.load(f)
-
-        # default_obj_props['date'] = dt.strftime('%Y-%m-%d')
-
-        # return default_obj_props
 
     soup = BeautifulSoup(res.text, "html.parser")
     LOG.debug("getting the data url")
@@ -111,9 +68,6 @@ def _get_apod_chars(dt, thumbs):
     props["date"] = dt.strftime("%Y-%m-%d") if dt else _date(soup)
     if hd_data:
         props["hdurl"] = _get_last_url(hd_data)
-
-    if thumbs and media_type == "video":
-        props["thumbnail_url"] = _get_thumbs(data)
 
     return props
 
@@ -289,7 +243,7 @@ def _date(soup):
     raise Exception("Date not found in soup data.")
 
 
-def parse_apod(dt, use_default_today_date=False, thumbs=False):
+def parse_apod(dt, use_default_today_date=False):
     """
     Accepts a date in '%Y-%m-%d' format. Returns the URL of the APOD image
     of that day, noting that
@@ -298,7 +252,7 @@ def parse_apod(dt, use_default_today_date=False, thumbs=False):
     LOG.debug(f"apod chars called date:{str(dt)}")
 
     try:
-        return _get_apod_chars(dt, thumbs)
+        return _get_apod_chars(dt)
 
     except Exception as ex:
 
@@ -310,9 +264,14 @@ def parse_apod(dt, use_default_today_date=False, thumbs=False):
         if use_default_today_date and dt:
             # try to get the day before
             dt = dt - datetime.timedelta(days=1)
-            return _get_apod_chars(dt, thumbs)
+            return _get_apod_chars(dt)
         else:
             # pass exception up the call stack
             LOG.error(str(ex))
             # sourcery skip: raise-specific-error
             raise Exception(ex) from ex
+
+
+def initialize():
+    pass  # TODO: load db, if db empty, fill with data,
+    # from current month backwards
