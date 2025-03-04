@@ -16,18 +16,27 @@ Using [ELO](https://en.wikipedia.org/wiki/Elo_rating_system) as a reference:
 
 Where:
 
-- ΔR = rating change
-- P = Puzzle rating
-- U = User rating
-- K = adjustment factor
-- S = score (1 for solving, 0 for failing)
-- E = expected probability of solving
+### ΔR = Rating Change
 
-> [!NOTE]
-> E = 1 / 1 + 10^(P-U)/400
+$\Delta R = K \times (S - E)$
 
-```
-$$
-\displaystyle\sum_{k=3}^5 k^2=3^2 + 4^2 + 5^2 =50
-$$
-```
+### Adjustment factor (K)
+
+$K = 40 - \frac{|P - U|}{50}$
+
+### Score (S)
+
+- 1 for solving
+- 0 for failing
+
+### Expected probability of solving (E)
+
+$E = \frac{1}{1 + 10^{(P - U)/400}}$
+
+### Puzzle rating (P)
+
+Value taken from the puzzle database.
+
+### User rating (U)
+
+Current user rating, users start with a rating of 1200.
