@@ -1,5 +1,7 @@
 # Chess Puzzles
-#### Video Demo:  <URL HERE>
+
+#### Video Demo:  `<URL HERE>`
+
 #### Description:
 
 Chess Puzzles is a lua game to solve chess puzzles, with a rating system similar to [ELO](https://en.wikipedia.org/wiki/Elo_rating_system).
@@ -9,7 +11,7 @@ Chess Puzzles is a lua game to solve chess puzzles, with a rating system similar
 The user is presented with a puzzle on the screen. He then selects a move,
 and the game responds with another move until the puzzle is solved. If the user
 makes a mistake the puzzle is failed and the rating is decreased. If the user makes
-all the correct moves and wins the puzzle the rating is increased.
+all the correct moves and wins the puzzle the rating is increased, and the game selects a new puzzle. The user can skip the puzzle, or get a hint.
 
 ## How is the rating change calculated
 
