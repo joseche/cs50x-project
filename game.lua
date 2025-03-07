@@ -18,14 +18,100 @@ function game.load()
     BKnight = love.graphics.newQuad(3 * SpritePieceSize, SpritePieceSize, SpritePieceSize, SpritePieceSize, Sprites)
     BRook = love.graphics.newQuad(4 * SpritePieceSize, SpritePieceSize, SpritePieceSize, SpritePieceSize, Sprites)
     BPawn = love.graphics.newQuad(5 * SpritePieceSize, SpritePieceSize, SpritePieceSize, SpritePieceSize, Sprites)
+
+    -- Variables to track clicked squares
+    SelectedSquare = nil -- Currently selected square
+    NewSquare = nil      -- Newly clicked square
+    BlinkTimer = 0       -- Timer for blinking
+    BlinkCount = 0       -- Number of blinks completed
+    IsBlinking = false   -- Whether blinking is active
 end
 
 game.draw = function()
     love.graphics.clear(SoftGray) -- Dark gray background for contrast
-
     game.draw_empty_board()
+
+    -- temporarily:
     game.draw_pieces_start_position()
+
+    game.highlight_mouse_pointer()
+    game.draw_selected_squares()
 end
+
+
+
+function love.mousepressed(x, y, button)
+    if button == 1 then -- Left mouse button
+        -- Calculate which square was clicked
+        local clickedX = math.floor(x / SquareSize)
+        local clickedY = math.floor(y / SquareSize)
+
+        -- Check if the click is within the chessboard bounds
+        if clickedX >= 0 and clickedX < 8 and clickedY >= 0 and clickedY < 8 then
+            if SelectedSquare == nil then
+                -- No square is currently selected, so select the clicked square
+                SelectedSquare = { x = clickedX, y = clickedY }
+            else
+                -- A square is already selected, so start blinking
+                NewSquare = { x = clickedX, y = clickedY }
+                IsBlinking = true
+                BlinkTimer = 0
+                BlinkCount = 0
+            end
+        end
+    end
+end
+
+function love.update(dt)
+    -- Handle blinking logic
+    if IsBlinking then
+        BlinkTimer = BlinkTimer + dt
+        if BlinkTimer >= 0.25 then -- Blink every 0.25 seconds
+            BlinkTimer = 0
+            BlinkCount = BlinkCount + 1
+            if BlinkCount >= 4 then  -- Blink twice (2 full cycles)
+                SelectedSquare = nil -- Deselect both squares
+                NewSquare = nil
+                IsBlinking = false
+                BlinkCount = 0
+            end
+        end
+    end
+end
+
+game.draw_selected_squares = function()
+    -- Highlight the selected square (if not blinking or during the "on" phase of blinking)
+    if SelectedSquare and not (IsBlinking and BlinkCount % 2 == 1) then
+        love.graphics.setColor(0, 1, 0) -- Green outline
+        love.graphics.rectangle("line", SelectedSquare.x * SquareSize, SelectedSquare.y * SquareSize, SquareSize,
+            SquareSize)
+    end
+
+    -- Highlight the new square (if not blinking or during the "on" phase of blinking)
+    if NewSquare and not (IsBlinking and BlinkCount % 2 == 1) then
+        love.graphics.setColor(DarkGreyColor, 0.5)
+        love.graphics.rectangle("line", NewSquare.x * SquareSize, NewSquare.y * SquareSize, SquareSize, SquareSize)
+    end
+end
+
+
+game.highlight_mouse_pointer = function()
+    -- Get mouse position
+    local mouseX, mouseY = love.mouse.getPosition()
+
+    -- Calculate which square the mouse is over
+    local hoverX = math.floor(mouseX / SquareSize)
+    local hoverY = math.floor(mouseY / SquareSize)
+
+    -- Check if the mouse is within the bounds of the chessboard
+    if hoverX >= 0 and hoverX < 8 and hoverY >= 0 and hoverY < 8 then
+        -- Draw a semi-transparent highlight over the square
+        love.graphics.setColor(0, 1, 0, 0.5)
+        love.graphics.setLineWidth(3) -- Set the outline thickness
+        love.graphics.rectangle("line", hoverX * SquareSize, hoverY * SquareSize, SquareSize, SquareSize)
+    end
+end
+
 
 game.draw_colors = function()
     -- Set background color
