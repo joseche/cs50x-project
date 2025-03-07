@@ -6,8 +6,8 @@ function love.conf(t)
     t.window.width = ScreenWidth
     t.window.height = ScreenHeight
     t.window.borderless = false
-    t.window.resizable = false
-    t.window.fullscreen = false
+    t.window.resizable = true
+    t.window.fullscreen = true
     t.window.fullscreentype = "desktop"
 
     t.window.icon = "resources/icon.png"
@@ -33,4 +33,3 @@ function love.conf(t)
     t.modules.video = true
     t.modules.window = true
 end
-

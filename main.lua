@@ -10,7 +10,23 @@ end
 
 function love.keypressed(key)
 	print("Key pressed: " .. key)
-	if key == "escape" or key == "q" then
+	if key == "q" then
 		love.event.quit()
 	end
+
+	if key == "escape" then
+		local _, _, flags = love.window.getMode()
+		if flags.fullscreen then
+			love.window.setMode(800, 600, { fullscreen = not flags.fullscreen, resizable = true })
+			love.resize(800, 600)
+		else
+			love.event.quit()
+		end
+	end
+end
+
+function love.resize(w, h)
+	ScreenWidth = w
+	ScreenHeight = h
+	CalculateRelativeScreenVariables()
 end
