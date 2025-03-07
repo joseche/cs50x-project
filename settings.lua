@@ -21,11 +21,15 @@ function CalculateRelativeScreenVariables()
     PieceScaleFactor = SquareSize / SpritePieceSize
 
     LabelFontSize = math.floor(SquareSize / 6)
+    NavBarFontSize = math.floor(SquareSize / 4)
 
     FileLabelOffsetX = math.floor(SquareSize * 0.8)
     FileLabelOffsetY = math.floor(SquareSize * 0.26)
     RankLabelOffsetX = math.floor(SquareSize * 0.1)
     RankLabelOffsetY = math.floor(SquareSize * 0.1)
+
+    MainMenu_X = math.floor(SquareSize * 9)
+    MainMenu_Y = math.floor(SquareSize)
 end
 
 CalculateRelativeScreenVariables()

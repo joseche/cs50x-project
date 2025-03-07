@@ -1,9 +1,21 @@
 local game = {}
 
+local main_menu = {
+    width = 200, -- Width of the menu
+    height = 300,
+    buttons = {
+        { text = "Puzzles",  y = 50,  width = 180, height = 40, clicked = false },
+        { text = "Settings", y = 120, width = 180, height = 40, clicked = false },
+        { text = "Close",    y = 190, width = 180, height = 40, clicked = false }
+    }
+}
+
 function game.load()
     love.graphics.setDefaultFilter("nearest", "nearest")
     Sprites = love.graphics.newImage("resources/pieces.png")
     LabelFont = love.graphics.newFont("resources/labelFont.ttf", LabelFontSize)
+
+    NavFont = love.graphics.newFont("resources/labelFont.ttf", NavBarFontSize)
 
     WKing = love.graphics.newQuad(0, 0, SpritePieceSize, SpritePieceSize, Sprites)
     WQueen = love.graphics.newQuad(SpritePieceSize, 0, SpritePieceSize, SpritePieceSize, Sprites)
@@ -36,9 +48,36 @@ game.draw = function()
 
     game.highlight_mouse_pointer()
     game.draw_selected_squares()
+
+    game.draw_main_menu()
 end
 
+game.draw_main_menu = function()
+    -- Draw the menu background
+    love.graphics.setColor(0.2, 0.2, 0.2) -- Dark gray background
+    love.graphics.rectangle("fill", MainMenu_X, MainMenu_Y, main_menu.width, main_menu.height, 10, 10)
 
+    -- Draw buttons
+    for i, button in ipairs(main_menu.buttons) do
+        -- Set button color (change if clicked)
+        if button.clicked then
+            love.graphics.setColor(0.4, 0.4, 0.8) -- Light blue when clicked
+        else
+            love.graphics.setColor(0.3, 0.3, 0.7) -- Dark blue when not clicked
+        end
+
+        -- Draw button rectangle
+        love.graphics.rectangle("fill", MainMenu_X + 10, MainMenu_Y + button.y, button.width, button.height, 5, 5)
+
+        -- Draw button text
+        love.graphics.setColor(1, 1, 1) -- White text
+        local textWidth = NavFont:getWidth(button.text)
+        local textHeight = NavFont:getHeight()
+        love.graphics.setFont(NavFont)
+        love.graphics.print(button.text, MainMenu_X + 10 + (button.width - textWidth) / 2,
+            MainMenu_Y + button.y + (button.height - textHeight) / 2)
+    end
+end
 
 function love.mousepressed(x, y, button)
     if button == 1 then -- Left mouse button
@@ -57,6 +96,26 @@ function love.mousepressed(x, y, button)
                 IsBlinking = true
                 BlinkTimer = 0
                 BlinkCount = 0
+            end
+        end
+
+        -- check if a menu was clicked
+        for i, btn in ipairs(main_menu.buttons) do
+            if x > MainMenu_X + 10 and x < MainMenu_X + 10 + btn.width and
+                y > (MainMenu_Y + btn.y) and y < (MainMenu_Y + btn.y) + btn.height then
+                btn.clicked = true -- Mark the button as clicked
+
+                -- Handle button actions
+                if btn.text == "Puzzles" then
+                    print("Puzzles button clicked!")
+                elseif btn.text == "Settings" then
+                    print("Settings button clicked!")
+                elseif btn.text == "Close" then
+                    print("Settings button clicked!")
+                    love.event.quit() -- Close the application
+                end
+            else
+                btn.clicked = false -- Deselect other buttons
             end
         end
     end
