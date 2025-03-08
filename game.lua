@@ -12,24 +12,30 @@ local main_menu = {
 
 function game.load()
     love.graphics.setDefaultFilter("nearest", "nearest")
-    Sprites = love.graphics.newImage("resources/pieces.png")
+
+    PricesSprites = love.graphics.newImage("resources/pieces.png")
+    BoardTilesSprites = love.graphics.newImage("resources/board-tiles-64x64.png")
+
+    WhiteQuad = love.graphics.newQuad(0, 0, BoardTileSpriteSize, BoardTileSpriteSize, BoardTilesSprites:getDimensions())
+    BlackQuad = love.graphics.newQuad(BoardTileSpriteSize, 0, BoardTileSpriteSize, BoardTileSpriteSize,
+        BoardTilesSprites:getDimensions())
+
     LabelFont = love.graphics.newFont("resources/labelFont.ttf", LabelFontSize)
+    MenuFont = love.graphics.newFont("resources/labelFont.ttf", MenuFontSize)
 
-    NavFont = love.graphics.newFont("resources/labelFont.ttf", NavBarFontSize)
+    WKing = love.graphics.newQuad(0, 0, PieceSpriteSize, PieceSpriteSize, PricesSprites)
+    WQueen = love.graphics.newQuad(PieceSpriteSize, 0, PieceSpriteSize, PieceSpriteSize, PricesSprites)
+    WBishop = love.graphics.newQuad(2 * PieceSpriteSize, 0, PieceSpriteSize, PieceSpriteSize, PricesSprites)
+    WKnight = love.graphics.newQuad(3 * PieceSpriteSize, 0, PieceSpriteSize, PieceSpriteSize, PricesSprites)
+    WRook = love.graphics.newQuad(4 * PieceSpriteSize, 0, PieceSpriteSize, PieceSpriteSize, PricesSprites)
+    WPawn = love.graphics.newQuad(5 * PieceSpriteSize, 0, PieceSpriteSize, PieceSpriteSize, PricesSprites)
 
-    WKing = love.graphics.newQuad(0, 0, SpritePieceSize, SpritePieceSize, Sprites)
-    WQueen = love.graphics.newQuad(SpritePieceSize, 0, SpritePieceSize, SpritePieceSize, Sprites)
-    WBishop = love.graphics.newQuad(2 * SpritePieceSize, 0, SpritePieceSize, SpritePieceSize, Sprites)
-    WKnight = love.graphics.newQuad(3 * SpritePieceSize, 0, SpritePieceSize, SpritePieceSize, Sprites)
-    WRook = love.graphics.newQuad(4 * SpritePieceSize, 0, SpritePieceSize, SpritePieceSize, Sprites)
-    WPawn = love.graphics.newQuad(5 * SpritePieceSize, 0, SpritePieceSize, SpritePieceSize, Sprites)
-
-    BKing = love.graphics.newQuad(0, SpritePieceSize, SpritePieceSize, SpritePieceSize, Sprites)
-    BQueen = love.graphics.newQuad(SpritePieceSize, SpritePieceSize, SpritePieceSize, SpritePieceSize, Sprites)
-    BBishop = love.graphics.newQuad(2 * SpritePieceSize, SpritePieceSize, SpritePieceSize, SpritePieceSize, Sprites)
-    BKnight = love.graphics.newQuad(3 * SpritePieceSize, SpritePieceSize, SpritePieceSize, SpritePieceSize, Sprites)
-    BRook = love.graphics.newQuad(4 * SpritePieceSize, SpritePieceSize, SpritePieceSize, SpritePieceSize, Sprites)
-    BPawn = love.graphics.newQuad(5 * SpritePieceSize, SpritePieceSize, SpritePieceSize, SpritePieceSize, Sprites)
+    BKing = love.graphics.newQuad(0, PieceSpriteSize, PieceSpriteSize, PieceSpriteSize, PricesSprites)
+    BQueen = love.graphics.newQuad(PieceSpriteSize, PieceSpriteSize, PieceSpriteSize, PieceSpriteSize, PricesSprites)
+    BBishop = love.graphics.newQuad(2 * PieceSpriteSize, PieceSpriteSize, PieceSpriteSize, PieceSpriteSize, PricesSprites)
+    BKnight = love.graphics.newQuad(3 * PieceSpriteSize, PieceSpriteSize, PieceSpriteSize, PieceSpriteSize, PricesSprites)
+    BRook = love.graphics.newQuad(4 * PieceSpriteSize, PieceSpriteSize, PieceSpriteSize, PieceSpriteSize, PricesSprites)
+    BPawn = love.graphics.newQuad(5 * PieceSpriteSize, PieceSpriteSize, PieceSpriteSize, PieceSpriteSize, PricesSprites)
 
     -- Variables to track clicked squares
     SelectedSquare = nil -- Currently selected square
@@ -71,9 +77,9 @@ game.draw_main_menu = function()
 
         -- Draw button text
         love.graphics.setColor(1, 1, 1) -- White text
-        local textWidth = NavFont:getWidth(button.text)
-        local textHeight = NavFont:getHeight()
-        love.graphics.setFont(NavFont)
+        local textWidth = MenuFont:getWidth(button.text)
+        local textHeight = MenuFont:getHeight()
+        love.graphics.setFont(MenuFont)
         love.graphics.print(button.text, MainMenu_X + 10 + (button.width - textWidth) / 2,
             MainMenu_Y + button.y + (button.height - textHeight) / 2)
     end
@@ -188,13 +194,20 @@ game.draw_colors = function()
 end
 
 game.draw_empty_board = function()
+    local squareScale = SquareSize / BoardTileSpriteSize
+
     love.graphics.setColor(WhiteColor)
     love.graphics.rectangle("fill", 0, 0, BoardWidth, BoardWidth)
     love.graphics.setColor(BlackColor)
     for x = 0, 7 do
         for y = 0, 7 do
             if (x + y) % 2 == 1 then
-                love.graphics.rectangle("fill", x * SquareSize, y * SquareSize, SquareSize, SquareSize)
+                love.graphics.draw(BoardTilesSprites, BlackQuad, x * SquareSize, y * SquareSize, 0, squareScale,
+                    squareScale)
+                --love.graphics.rectangle("fill", x * SquareSize, y * SquareSize, SquareSize, SquareSize)
+            else
+                love.graphics.draw(BoardTilesSprites, WhiteQuad, x * SquareSize, y * SquareSize, 0, squareScale,
+                    squareScale)
             end
         end
     end
@@ -228,50 +241,50 @@ game.draw_pieces_start_position = function()
     -- draw black pawns
     for x = 0, 7 do
         y_pos = 1 * SquareSize
-        love.graphics.draw(Sprites, BPawn, x * SquareSize, y_pos, 0, PieceScaleFactor)
+        love.graphics.draw(PricesSprites, BPawn, x * SquareSize, y_pos, 0, PieceScaleFactor)
     end
 
     -- draw white pawns
     for x = 0, 7 do
         y_pos = 6 * SquareSize
-        love.graphics.draw(Sprites, WPawn, x * SquareSize, y_pos, 0, PieceScaleFactor)
+        love.graphics.draw(PricesSprites, WPawn, x * SquareSize, y_pos, 0, PieceScaleFactor)
     end
 
     -- Draw black rooks
-    love.graphics.draw(Sprites, BRook, 0 * SquareSize, 0 * SquareSize, 0, PieceScaleFactor)
-    love.graphics.draw(Sprites, BRook, 7 * SquareSize, 0 * SquareSize, 0, PieceScaleFactor)
+    love.graphics.draw(PricesSprites, BRook, 0 * SquareSize, 0 * SquareSize, 0, PieceScaleFactor)
+    love.graphics.draw(PricesSprites, BRook, 7 * SquareSize, 0 * SquareSize, 0, PieceScaleFactor)
 
     -- Draw white rooks
-    love.graphics.draw(Sprites, WRook, 0 * SquareSize, 7 * SquareSize, 0, PieceScaleFactor)
-    love.graphics.draw(Sprites, WRook, 7 * SquareSize, 7 * SquareSize, 0, PieceScaleFactor)
+    love.graphics.draw(PricesSprites, WRook, 0 * SquareSize, 7 * SquareSize, 0, PieceScaleFactor)
+    love.graphics.draw(PricesSprites, WRook, 7 * SquareSize, 7 * SquareSize, 0, PieceScaleFactor)
 
     -- Draw black knights
-    love.graphics.draw(Sprites, BKnight, 1 * SquareSize, 0 * SquareSize, 0, PieceScaleFactor)
-    love.graphics.draw(Sprites, BKnight, 6 * SquareSize, 0 * SquareSize, 0, PieceScaleFactor)
+    love.graphics.draw(PricesSprites, BKnight, 1 * SquareSize, 0 * SquareSize, 0, PieceScaleFactor)
+    love.graphics.draw(PricesSprites, BKnight, 6 * SquareSize, 0 * SquareSize, 0, PieceScaleFactor)
 
     -- Draw white knights
-    love.graphics.draw(Sprites, WKnight, 1 * SquareSize, 7 * SquareSize, 0, PieceScaleFactor)
-    love.graphics.draw(Sprites, WKnight, 6 * SquareSize, 7 * SquareSize, 0, PieceScaleFactor)
+    love.graphics.draw(PricesSprites, WKnight, 1 * SquareSize, 7 * SquareSize, 0, PieceScaleFactor)
+    love.graphics.draw(PricesSprites, WKnight, 6 * SquareSize, 7 * SquareSize, 0, PieceScaleFactor)
 
     -- Draw black bishops
-    love.graphics.draw(Sprites, BBishop, 2 * SquareSize, 0 * SquareSize, 0, PieceScaleFactor)
-    love.graphics.draw(Sprites, BBishop, 5 * SquareSize, 0 * SquareSize, 0, PieceScaleFactor)
+    love.graphics.draw(PricesSprites, BBishop, 2 * SquareSize, 0 * SquareSize, 0, PieceScaleFactor)
+    love.graphics.draw(PricesSprites, BBishop, 5 * SquareSize, 0 * SquareSize, 0, PieceScaleFactor)
 
     -- Draw white bishops
-    love.graphics.draw(Sprites, WBishop, 2 * SquareSize, 7 * SquareSize, 0, PieceScaleFactor)
-    love.graphics.draw(Sprites, WBishop, 5 * SquareSize, 7 * SquareSize, 0, PieceScaleFactor)
+    love.graphics.draw(PricesSprites, WBishop, 2 * SquareSize, 7 * SquareSize, 0, PieceScaleFactor)
+    love.graphics.draw(PricesSprites, WBishop, 5 * SquareSize, 7 * SquareSize, 0, PieceScaleFactor)
 
     -- Draw black queen
-    love.graphics.draw(Sprites, BQueen, 3 * SquareSize, 0 * SquareSize, 0, PieceScaleFactor)
+    love.graphics.draw(PricesSprites, BQueen, 3 * SquareSize, 0 * SquareSize, 0, PieceScaleFactor)
 
     -- Draw white queen
-    love.graphics.draw(Sprites, WQueen, 3 * SquareSize, 7 * SquareSize, 0, PieceScaleFactor)
+    love.graphics.draw(PricesSprites, WQueen, 3 * SquareSize, 7 * SquareSize, 0, PieceScaleFactor)
 
     -- Draw black king
-    love.graphics.draw(Sprites, BKing, 4 * SquareSize, 0 * SquareSize, 0, PieceScaleFactor)
+    love.graphics.draw(PricesSprites, BKing, 4 * SquareSize, 0 * SquareSize, 0, PieceScaleFactor)
 
     -- Draw white king
-    love.graphics.draw(Sprites, WKing, 4 * SquareSize, 7 * SquareSize, 0, PieceScaleFactor)
+    love.graphics.draw(PricesSprites, WKing, 4 * SquareSize, 7 * SquareSize, 0, PieceScaleFactor)
 end
 
 return game

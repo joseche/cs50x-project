@@ -17,7 +17,12 @@ function love.keypressed(key)
 	if key == "escape" then
 		local _, _, flags = love.window.getMode()
 		if flags.fullscreen then
-			love.window.setMode(800, 600, { fullscreen = not flags.fullscreen, resizable = true })
+			love.window.setMode(800, 600, {
+				fullscreen = not flags.fullscreen,
+				resizable = true,
+				minwidth = 800,
+				minheight = 600
+			})
 			love.resize(800, 600)
 		else
 			love.event.quit()
