@@ -60,12 +60,14 @@ function love.mousepressed(x, y, button)
 		end
 
 		-- check if a menu was clicked
-		for i, btn in ipairs(Main_menu.buttons) do
-			if x > btn.x_start and x < btn.x_end and y > btn.y_start and y < btn.y_end then
-				btn.clicked = true -- Mark the button as clicked
-				btn.fnt()
-			else
-				btn.clicked = false -- Deselect other buttons
+		if LevelDropdown.isOpen == false then -- if the dropdown is open, button should not work
+			for i, btn in ipairs(Main_menu.buttons) do
+				if x > btn.x_start and x < btn.x_end and y > btn.y_start and y < btn.y_end then
+					btn.clicked = true -- Mark the button as clicked
+					btn.fnt()
+				else
+					btn.clicked = false -- Deselect other buttons
+				end
 			end
 		end
 

@@ -39,9 +39,9 @@ Main_menu = {
 LevelDropdown = {
     x = MainMenu_X + 40, -- this is recalculated later
     y = 160,
-    width = 150,
+    width = 100,
     height = 30,
-    options = {},
+    options = {}, -- filled in the for below
     selected = "Auto",
     isOpen = false
 }
@@ -93,10 +93,9 @@ game.draw = function()
     game.draw_pieces_start_position()
     game.draw_ratings_graph(Ratings, MainMenu_X + 40, 40, MainMenu_Width - 40, 100)
     game.draw_main_menu()
-
     game.highlight_mouse_pointer()
-    -- game.draw_selected_squares()
-    -- game.draw_level_selector()
+    game.draw_selected_squares()
+    game.draw_level_selector()
 end
 
 game.draw_background = function()
@@ -161,23 +160,15 @@ game.draw_selected_squares = function()
 end
 
 game.highlight_mouse_pointer = function()
-    -- Get mouse position
     local mouseX, mouseY = love.mouse.getPosition()
-
-    -- Calculate which square the mouse is over
-    local hoverX = math.floor(mouseX / SquareSize)
-    local hoverY = math.floor(mouseY / SquareSize)
-    -- print("hoverX:" .. hoverX)
-    -- print("hoverY:" .. hoverY)
-    -- print("SquareSize:" .. SquareSize)
-
-
+    local squareFile = math.floor(mouseX / SquareSize)
+    local squareRank = math.floor(mouseY / SquareSize)
     -- Check if the mouse is within the bounds of the chessboard
-    if hoverX >= 0 and hoverX < 8 and hoverY >= 0 and hoverY < 8 then
+    if squareFile >= 0 and squareFile < 8 and squareRank >= 0 and squareRank < 8 then
         -- Draw a semi-transparent highlight over the square
         love.graphics.setColor(SelectedSquareColor)
         love.graphics.setLineWidth(2) -- Set the outline thickness
-        love.graphics.rectangle("line", hoverX * SquareSize, hoverY * SquareSize, SquareSize, SquareSize)
+        love.graphics.rectangle("line", squareFile * SquareSize, squareRank * SquareSize, SquareSize, SquareSize)
     end
 end
 
@@ -349,8 +340,8 @@ game.draw_ratings_graph = function(ratings, x, y, width, height)
 end
 
 game.draw_level_selector = function()
-    LevelDropdown.x = MainMenu_X + 40
-    LevelDropdown.y = 160
+    LevelDropdown.x = MainMenu_X
+    LevelDropdown.y = 200
 
     -- Draw the dropdown box
     love.graphics.setColor(0.8, 0.8, 0.8) -- Light gray
@@ -359,6 +350,7 @@ game.draw_level_selector = function()
     love.graphics.rectangle("line", LevelDropdown.x, LevelDropdown.y, LevelDropdown.width, LevelDropdown.height)
 
     -- Draw selected text
+    love.graphics.print("Puzzle Rating", LevelDropdown.x, LevelDropdown.y - 30)
     love.graphics.print(LevelDropdown.selected, LevelDropdown.x + 10, LevelDropdown.y + 4)
 
     -- Draw the dropdown options if open
