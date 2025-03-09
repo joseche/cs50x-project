@@ -4,20 +4,18 @@ local game = {}
 Ratings = { 1150, 1214, 1230, 1237, 1235, 1220, 1259, 1273, 1280, 1274 }
 
 Main_menu = {
-    width = 200, -- Width of the menu
-    height = 300,
     buttons = {
         {
-            text = "Puzzles",
+            text = "Next Puzzle",
             y = 0,
             height = 40,
             clicked = false,
             fnt = function()
-                print("This is the puzzles button")
+                print("Next Puzzle btn")
             end
         },
         {
-            text = "Settings",
+            text = "Something to select level",
             y = 50,
             height = 40,
             clicked = false,
@@ -37,6 +35,21 @@ Main_menu = {
         }
     }
 }
+
+LevelDropdown = {
+    x = MainMenu_X + 40, -- this is recalculated later
+    y = 160,
+    width = 150,
+    height = 30,
+    options = {},
+    selected = "Auto",
+    isOpen = false
+}
+table.insert(LevelDropdown.options, "Auto")
+for i = 400, 2000, 100 do
+    table.insert(LevelDropdown.options, i)
+end
+
 
 function game.load()
     love.graphics.setDefaultFilter("nearest", "nearest")
@@ -78,10 +91,12 @@ game.draw = function()
     game.draw_background()
     game.draw_empty_board()
     game.draw_pieces_start_position()
-    game.highlight_mouse_pointer()
-    game.draw_selected_squares()
     game.draw_ratings_graph(Ratings, MainMenu_X + 40, 40, MainMenu_Width - 40, 100)
     game.draw_main_menu()
+
+    game.highlight_mouse_pointer()
+    -- game.draw_selected_squares()
+    -- game.draw_level_selector()
 end
 
 game.draw_background = function()
@@ -94,6 +109,7 @@ game.draw_background = function()
     local repeatY = math.ceil(screenHeight / BackgroundTextureHeight)
 
     -- Draw the repeating texture
+    love.graphics.setColor({ 1, 1, 1 })
     for y = 0, repeatY - 1 do
         for x = 0, repeatX - 1 do
             love.graphics.draw(BackgroundTexture, x * BackgroundTextureWidth, y * BackgroundTextureHeight)
@@ -151,6 +167,10 @@ game.highlight_mouse_pointer = function()
     -- Calculate which square the mouse is over
     local hoverX = math.floor(mouseX / SquareSize)
     local hoverY = math.floor(mouseY / SquareSize)
+    -- print("hoverX:" .. hoverX)
+    -- print("hoverY:" .. hoverY)
+    -- print("SquareSize:" .. SquareSize)
+
 
     -- Check if the mouse is within the bounds of the chessboard
     if hoverX >= 0 and hoverX < 8 and hoverY >= 0 and hoverY < 8 then
@@ -260,8 +280,14 @@ end
 
 game.draw_ratings_graph = function(ratings, x, y, width, height)
     love.graphics.setFont(RatingFont)
+    local lastRating = ratings[#ratings]
+    -- Draw the Y-axis label
+    love.graphics.setColor(0, 0, 0) -- White for text
+    love.graphics.print("Current Rating: " .. lastRating, x, y - RatingFont:getHeight() - 5)
+
     local minRating = ratings[1]
     local maxRating = ratings[1]
+
     for i = 2, #ratings do
         if ratings[i] < minRating then
             minRating = ratings[i]
@@ -275,14 +301,9 @@ game.draw_ratings_graph = function(ratings, x, y, width, height)
     local scaleX = width / (#ratings - 1)
     local scaleY = height / (maxRating - minRating)
 
-    -- Draw the graph background (optional)
-    love.graphics.setColor(0.2, 0.2, 0.2) -- Dark gray background
+    -- Draw the graph background
+    love.graphics.setColor(0.2, 0.2, 0.2)
     love.graphics.rectangle("fill", x, y, width, height)
-
-    -- Draw the graph axes (optional)
-    love.graphics.setColor(1, 1, 1)                          -- White axes
-    love.graphics.line(x, y + height, x + width, y + height) -- X-axis
-    love.graphics.line(x, y, x, y + height)                  -- Y-axis
 
     -- Calculate a dynamic guide line interval
     local range = maxRating - minRating
@@ -303,9 +324,6 @@ game.draw_ratings_graph = function(ratings, x, y, width, height)
         love.graphics.print(ratingLevel, x - 50, yLine - 10) -- Adjust position for label
     end
 
-    -- Draw the Y-axis label
-    love.graphics.setColor(1, 1, 1) -- White for text
-    love.graphics.print("Rating", x + 8, y + 5)
 
     -- Draw the line graph
     for i = 2, #ratings do
@@ -328,6 +346,32 @@ game.draw_ratings_graph = function(ratings, x, y, width, height)
     end
     -- Reset the color to white (optional)
     love.graphics.setColor(1, 1, 1)
+end
+
+game.draw_level_selector = function()
+    LevelDropdown.x = MainMenu_X + 40
+    LevelDropdown.y = 160
+
+    -- Draw the dropdown box
+    love.graphics.setColor(0.8, 0.8, 0.8) -- Light gray
+    love.graphics.rectangle("fill", LevelDropdown.x, LevelDropdown.y, LevelDropdown.width, LevelDropdown.height)
+    love.graphics.setColor(0, 0, 0)       -- Black
+    love.graphics.rectangle("line", LevelDropdown.x, LevelDropdown.y, LevelDropdown.width, LevelDropdown.height)
+
+    -- Draw selected text
+    love.graphics.print(LevelDropdown.selected, LevelDropdown.x + 10, LevelDropdown.y + 4)
+
+    -- Draw the dropdown options if open
+    if LevelDropdown.isOpen then
+        for i, option in ipairs(LevelDropdown.options) do
+            local optionY = LevelDropdown.y + LevelDropdown.height * i
+            love.graphics.setColor(0.9, 0.9, 0.9) -- Slightly darker gray
+            love.graphics.rectangle("fill", LevelDropdown.x, optionY, LevelDropdown.width, LevelDropdown.height)
+            love.graphics.setColor(0, 0, 0)       -- Black
+            love.graphics.rectangle("line", LevelDropdown.x, optionY, LevelDropdown.width, LevelDropdown.height)
+            love.graphics.print(option, LevelDropdown.x + 10, optionY + 4)
+        end
+    end
 end
 
 return game

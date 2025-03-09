@@ -68,6 +68,30 @@ function love.mousepressed(x, y, button)
 				btn.clicked = false -- Deselect other buttons
 			end
 		end
+
+		-- check if the level selector was clicked
+		if x > LevelDropdown.x and x < LevelDropdown.x + LevelDropdown.width and
+			y > LevelDropdown.y and y < LevelDropdown.y + LevelDropdown.height then
+			LevelDropdown.isOpen = not LevelDropdown.isOpen
+		elseif LevelDropdown.isOpen then
+			-- Check if an option is clicked
+			local optionSelected = false
+			for i, option in ipairs(LevelDropdown.options) do
+				local optionY = LevelDropdown.y + LevelDropdown.height * i
+				if x > LevelDropdown.x and x < LevelDropdown.x + LevelDropdown.width and
+					y > optionY and y < optionY + LevelDropdown.height then
+					LevelDropdown.selected = option
+					LevelDropdown.isOpen = false
+					optionSelected = true
+					break
+				end
+			end
+			if optionSelected == false then
+				LevelDropdown.isOpen = false
+			end
+		else
+			LevelDropdown.isOpen = false
+		end
 	end
 end
 
