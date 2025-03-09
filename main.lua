@@ -17,13 +17,13 @@ function love.keypressed(key)
 	if key == "escape" then
 		local _, _, flags = love.window.getMode()
 		if flags.fullscreen then
-			love.window.setMode(800, 600, {
+			love.window.setMode(MinScreenWidth, MinScreenHeight, {
 				fullscreen = not flags.fullscreen,
 				resizable = true,
-				minwidth = 800,
-				minheight = 600
+				minwidth = MinScreenWidth,
+				minheight = MinScreenHeight
 			})
-			love.resize(800, 600)
+			love.resize(MinScreenWidth, MinScreenHeight)
 		else
 			love.event.quit()
 		end
@@ -34,4 +34,56 @@ function love.resize(w, h)
 	ScreenWidth = w
 	ScreenHeight = h
 	CalculateRelativeScreenVariables()
+	LabelFont = love.graphics.newFont("resources/labelFont.ttf", LabelFontSize)
+	MenuFont = love.graphics.newFont("resources/labelFont.ttf", MenuFontSize)
+	RatingFont = love.graphics.newFont("resources/labelFont.ttf", RatingFontSize)
+end
+
+function love.mousepressed(x, y, button)
+	if button == 1 then -- Left mouse button
+		-- Calculate which square was clicked
+		local clickedX = math.floor(x / SquareSize)
+		local clickedY = math.floor(y / SquareSize)
+
+		-- Check if the click is within the chessboard bounds
+		if clickedX >= 0 and clickedX < 8 and clickedY >= 0 and clickedY < 8 then
+			if SelectedSquare == nil then
+				-- No square is currently selected, so select the clicked square
+				SelectedSquare = { x = clickedX, y = clickedY }
+			else
+				-- A square is already selected, so start blinking
+				NewSquare = { x = clickedX, y = clickedY }
+				IsBlinking = true
+				BlinkTimer = 0
+				BlinkCount = 0
+			end
+		end
+
+		-- check if a menu was clicked
+		for i, btn in ipairs(Main_menu.buttons) do
+			if x > btn.x_start and x < btn.x_end and y > btn.y_start and y < btn.y_end then
+				btn.clicked = true -- Mark the button as clicked
+				btn.fnt()
+			else
+				btn.clicked = false -- Deselect other buttons
+			end
+		end
+	end
+end
+
+function love.update(dt)
+	-- Handle blinking logic
+	if IsBlinking then
+		BlinkTimer = BlinkTimer + dt
+		if BlinkTimer >= 0.25 then -- Blink every 0.25 seconds
+			BlinkTimer = 0
+			BlinkCount = BlinkCount + 1
+			if BlinkCount >= 4 then -- Blink twice (2 full cycles)
+				SelectedSquare = nil -- Deselect both squares
+				NewSquare = nil
+				IsBlinking = false
+				BlinkCount = 0
+			end
+		end
+	end
 end
