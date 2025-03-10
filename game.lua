@@ -15,12 +15,12 @@ Main_menu = {
             end
         },
         {
-            text = "Something to select level",
+            text = "Skip",
             y = 50,
             height = 40,
             clicked = false,
             fnt = function()
-                print("this is the settings")
+                print("Skip")
             end
         },
         {
@@ -28,6 +28,7 @@ Main_menu = {
             y = 100,
             height = 40,
             clicked = false,
+            color = { 0.8, 0.4, 0.2 },
             fnt = function()
                 print("this is close")
                 love.event.quit()
@@ -123,7 +124,11 @@ game.draw_main_menu = function()
         if button.clicked then
             love.graphics.setColor(0.4, 0.4, 0.8) -- Light blue when clicked
         else
-            love.graphics.setColor(0.3, 0.3, 0.7) -- Dark blue when not clicked
+            if button["color"] ~= nil then
+                love.graphics.setColor(button["color"])
+            else
+                love.graphics.setColor(0.3, 0.3, 0.7) -- Dark blue when not clicked
+            end
         end
         -- Draw button rectangle
         love.graphics.rectangle("fill", MainMenu_X, MainMenu_Y + button.y, MainMenu_Width, button.height, 5, 5)

@@ -24,8 +24,8 @@ function love.keypressed(key)
 				minheight = MinScreenHeight
 			})
 			love.resize(MinScreenWidth, MinScreenHeight)
-		else
-			love.event.quit()
+			-- else
+			-- 	love.event.quit()
 		end
 	end
 end
@@ -82,6 +82,7 @@ function love.mousepressed(x, y, button)
 				local optionY = LevelDropdown.y + LevelDropdown.height * i
 				if x > LevelDropdown.x and x < LevelDropdown.x + LevelDropdown.width and
 					y > optionY and y < optionY + LevelDropdown.height then
+					print("Puzzle Rating selected: " .. option)
 					LevelDropdown.selected = option
 					LevelDropdown.isOpen = false
 					optionSelected = true
