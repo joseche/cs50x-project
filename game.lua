@@ -1,7 +1,7 @@
 local game = {}
 
 -- ratings as example
-Ratings = { 1150, 1214, 1230, 1237, 1235, 1220, 1259, 1273, 1280, 1274 }
+Ratings = { 1150, 1173, 1168, 1176, 1183, 1191, 1198, 1193, 1199, 1205 }
 
 Main_menu = {
     buttons = {
@@ -15,12 +15,12 @@ Main_menu = {
             end
         },
         {
-            text = "Skip",
+            text = "Hint",
             y = 50,
             height = 40,
             clicked = false,
             fnt = function()
-                print("Skip")
+                print("Hint")
             end
         },
         {
@@ -42,7 +42,7 @@ LevelDropdown = {
     y = 160,
     width = 100,
     height = 30,
-    options = {}, -- filled in the for below
+    options = {}, -- filled in the 'for' below
     selected = "Auto",
     isOpen = false
 }
@@ -53,7 +53,7 @@ end
 
 
 function game.load()
-    love.graphics.setDefaultFilter("nearest", "nearest")
+    love.graphics.setDefaultFilter("nearest", "nearest") -- according to the lecture this improves rendering of lines
     PricesSprites = love.graphics.newImage("resources/pieces.png")
     BoardTilesSprites = love.graphics.newImage("resources/board-tiles-64x64.png")
     WhiteQuad = love.graphics.newQuad(0, 0, BoardTileSpriteSize, BoardTileSpriteSize, BoardTilesSprites:getDimensions())
@@ -66,18 +66,28 @@ function game.load()
     BackgroundTexture = love.graphics.newImage("resources/background.png")
     BackgroundTextureWidth = BackgroundTexture:getWidth()
     BackgroundTextureHeight = BackgroundTexture:getHeight()
-    WKing = love.graphics.newQuad(0, 0, PieceSpriteSize, PieceSpriteSize, PricesSprites)
-    WQueen = love.graphics.newQuad(PieceSpriteSize, 0, PieceSpriteSize, PieceSpriteSize, PricesSprites)
-    WBishop = love.graphics.newQuad(2 * PieceSpriteSize, 0, PieceSpriteSize, PieceSpriteSize, PricesSprites)
-    WKnight = love.graphics.newQuad(3 * PieceSpriteSize, 0, PieceSpriteSize, PieceSpriteSize, PricesSprites)
-    WRook = love.graphics.newQuad(4 * PieceSpriteSize, 0, PieceSpriteSize, PieceSpriteSize, PricesSprites)
-    WPawn = love.graphics.newQuad(5 * PieceSpriteSize, 0, PieceSpriteSize, PieceSpriteSize, PricesSprites)
-    BKing = love.graphics.newQuad(0, PieceSpriteSize, PieceSpriteSize, PieceSpriteSize, PricesSprites)
-    BQueen = love.graphics.newQuad(PieceSpriteSize, PieceSpriteSize, PieceSpriteSize, PieceSpriteSize, PricesSprites)
-    BBishop = love.graphics.newQuad(2 * PieceSpriteSize, PieceSpriteSize, PieceSpriteSize, PieceSpriteSize, PricesSprites)
-    BKnight = love.graphics.newQuad(3 * PieceSpriteSize, PieceSpriteSize, PieceSpriteSize, PieceSpriteSize, PricesSprites)
-    BRook = love.graphics.newQuad(4 * PieceSpriteSize, PieceSpriteSize, PieceSpriteSize, PieceSpriteSize, PricesSprites)
-    BPawn = love.graphics.newQuad(5 * PieceSpriteSize, PieceSpriteSize, PieceSpriteSize, PieceSpriteSize, PricesSprites)
+
+    PieceQuads = {
+        -- white pieces
+        ['K'] = love.graphics.newQuad(0, 0, PieceSpriteSize, PieceSpriteSize, PricesSprites),
+        ['Q'] = love.graphics.newQuad(PieceSpriteSize, 0, PieceSpriteSize, PieceSpriteSize, PricesSprites),
+        ['B'] = love.graphics.newQuad(2 * PieceSpriteSize, 0, PieceSpriteSize, PieceSpriteSize, PricesSprites),
+        ['N'] = love.graphics.newQuad(3 * PieceSpriteSize, 0, PieceSpriteSize, PieceSpriteSize, PricesSprites),
+        ['R'] = love.graphics.newQuad(4 * PieceSpriteSize, 0, PieceSpriteSize, PieceSpriteSize, PricesSprites),
+        ['P'] = love.graphics.newQuad(5 * PieceSpriteSize, 0, PieceSpriteSize, PieceSpriteSize, PricesSprites),
+
+        -- black pieces
+        ['k'] = love.graphics.newQuad(0, PieceSpriteSize, PieceSpriteSize, PieceSpriteSize, PricesSprites),
+        ['q'] = love.graphics.newQuad(PieceSpriteSize, PieceSpriteSize, PieceSpriteSize, PieceSpriteSize, PricesSprites),
+        ['b'] = love.graphics.newQuad(2 * PieceSpriteSize, PieceSpriteSize, PieceSpriteSize, PieceSpriteSize,
+            PricesSprites),
+        ['n'] = love.graphics.newQuad(3 * PieceSpriteSize, PieceSpriteSize, PieceSpriteSize, PieceSpriteSize,
+            PricesSprites),
+        ['r'] = love.graphics.newQuad(4 * PieceSpriteSize, PieceSpriteSize, PieceSpriteSize, PieceSpriteSize,
+            PricesSprites),
+        ['p'] = love.graphics.newQuad(5 * PieceSpriteSize, PieceSpriteSize, PieceSpriteSize, PieceSpriteSize,
+            PricesSprites)
+    }
 
     -- Variables to track clicked squares
     SelectedSquare = nil -- Currently selected square
@@ -236,29 +246,30 @@ end
 game.draw_pieces_start_position = function()
     love.graphics.setColor(1, 1, 1)
     for x = 0, 7 do
-        y_pos = 1 * SquareSize
-        love.graphics.draw(PricesSprites, BPawn, x * SquareSize, y_pos, 0, PieceScaleFactor)
+        local y_pos = 1 * SquareSize
+        love.graphics.draw(PricesSprites, PieceQuads['p'], x * SquareSize, y_pos, 0, PieceScaleFactor)
     end
     for x = 0, 7 do
-        y_pos = 6 * SquareSize
-        love.graphics.draw(PricesSprites, WPawn, x * SquareSize, y_pos, 0, PieceScaleFactor)
+        local y_pos = 6 * SquareSize
+        love.graphics.draw(PricesSprites, PieceQuads['P'], x * SquareSize, y_pos, 0, PieceScaleFactor)
     end
-    love.graphics.draw(PricesSprites, BRook, 0 * SquareSize, 0 * SquareSize, 0, PieceScaleFactor)
-    love.graphics.draw(PricesSprites, BRook, 7 * SquareSize, 0 * SquareSize, 0, PieceScaleFactor)
-    love.graphics.draw(PricesSprites, WRook, 0 * SquareSize, 7 * SquareSize, 0, PieceScaleFactor)
-    love.graphics.draw(PricesSprites, WRook, 7 * SquareSize, 7 * SquareSize, 0, PieceScaleFactor)
-    love.graphics.draw(PricesSprites, BKnight, 1 * SquareSize, 0 * SquareSize, 0, PieceScaleFactor)
-    love.graphics.draw(PricesSprites, BKnight, 6 * SquareSize, 0 * SquareSize, 0, PieceScaleFactor)
-    love.graphics.draw(PricesSprites, WKnight, 1 * SquareSize, 7 * SquareSize, 0, PieceScaleFactor)
-    love.graphics.draw(PricesSprites, WKnight, 6 * SquareSize, 7 * SquareSize, 0, PieceScaleFactor)
-    love.graphics.draw(PricesSprites, BBishop, 2 * SquareSize, 0 * SquareSize, 0, PieceScaleFactor)
-    love.graphics.draw(PricesSprites, BBishop, 5 * SquareSize, 0 * SquareSize, 0, PieceScaleFactor)
-    love.graphics.draw(PricesSprites, WBishop, 2 * SquareSize, 7 * SquareSize, 0, PieceScaleFactor)
-    love.graphics.draw(PricesSprites, WBishop, 5 * SquareSize, 7 * SquareSize, 0, PieceScaleFactor)
-    love.graphics.draw(PricesSprites, BQueen, 3 * SquareSize, 0 * SquareSize, 0, PieceScaleFactor)
-    love.graphics.draw(PricesSprites, WQueen, 3 * SquareSize, 7 * SquareSize, 0, PieceScaleFactor)
-    love.graphics.draw(PricesSprites, BKing, 4 * SquareSize, 0 * SquareSize, 0, PieceScaleFactor)
-    love.graphics.draw(PricesSprites, WKing, 4 * SquareSize, 7 * SquareSize, 0, PieceScaleFactor)
+
+    love.graphics.draw(PricesSprites, PieceQuads['r'], 0 * SquareSize, 0 * SquareSize, 0, PieceScaleFactor)
+    love.graphics.draw(PricesSprites, PieceQuads['r'], 7 * SquareSize, 0 * SquareSize, 0, PieceScaleFactor)
+    love.graphics.draw(PricesSprites, PieceQuads['R'], 0 * SquareSize, 7 * SquareSize, 0, PieceScaleFactor)
+    love.graphics.draw(PricesSprites, PieceQuads['R'], 7 * SquareSize, 7 * SquareSize, 0, PieceScaleFactor)
+    love.graphics.draw(PricesSprites, PieceQuads['n'], 1 * SquareSize, 0 * SquareSize, 0, PieceScaleFactor)
+    love.graphics.draw(PricesSprites, PieceQuads['n'], 6 * SquareSize, 0 * SquareSize, 0, PieceScaleFactor)
+    love.graphics.draw(PricesSprites, PieceQuads['N'], 1 * SquareSize, 7 * SquareSize, 0, PieceScaleFactor)
+    love.graphics.draw(PricesSprites, PieceQuads['N'], 6 * SquareSize, 7 * SquareSize, 0, PieceScaleFactor)
+    love.graphics.draw(PricesSprites, PieceQuads['b'], 2 * SquareSize, 0 * SquareSize, 0, PieceScaleFactor)
+    love.graphics.draw(PricesSprites, PieceQuads['b'], 5 * SquareSize, 0 * SquareSize, 0, PieceScaleFactor)
+    love.graphics.draw(PricesSprites, PieceQuads['B'], 2 * SquareSize, 7 * SquareSize, 0, PieceScaleFactor)
+    love.graphics.draw(PricesSprites, PieceQuads['B'], 5 * SquareSize, 7 * SquareSize, 0, PieceScaleFactor)
+    love.graphics.draw(PricesSprites, PieceQuads['q'], 3 * SquareSize, 0 * SquareSize, 0, PieceScaleFactor)
+    love.graphics.draw(PricesSprites, PieceQuads['Q'], 3 * SquareSize, 7 * SquareSize, 0, PieceScaleFactor)
+    love.graphics.draw(PricesSprites, PieceQuads['k'], 4 * SquareSize, 0 * SquareSize, 0, PieceScaleFactor)
+    love.graphics.draw(PricesSprites, PieceQuads['K'], 4 * SquareSize, 7 * SquareSize, 0, PieceScaleFactor)
 end
 
 -- this function is only to round the intervals of the graph

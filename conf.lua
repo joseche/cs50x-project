@@ -6,7 +6,7 @@ function love.conf(t)
     t.window.width = ScreenWidth
     t.window.height = ScreenHeight
     t.window.borderless = false
-    t.window.resizable = true
+    t.window.resizable = false
     t.window.fullscreen = true
     t.window.fullscreentype = "desktop"
 

@@ -19,7 +19,7 @@ function love.keypressed(key)
 		if flags.fullscreen then
 			love.window.setMode(MinScreenWidth, MinScreenHeight, {
 				fullscreen = not flags.fullscreen,
-				resizable = true,
+				resizable = false,
 				minwidth = MinScreenWidth,
 				minheight = MinScreenHeight
 			})
