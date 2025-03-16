@@ -19,6 +19,10 @@ SelectedSquareColor = { 0.6, 0.8, 0.1 }
 PieceSpriteSize = 200 -- this doesn't change, given the sprite png I am using
 BoardTileSpriteSize = 64
 
+RatingRoundingFactor = 5
+DefaultRating = 800
+
+UserRatingsFile = "ChessPuzzlesUserRating.txt"
 
 function Calculate_square_size()
     local menu_width = math.max(MenuMinWidth, ScreenWidth - 8 * (ScreenHeight / 8))
@@ -27,7 +31,7 @@ function Calculate_square_size()
     return square_size
 end
 
-function CalculateRelativeScreenVariables()
+function CalculateRelativeScreenVariables() -- has all global vars updated as side-effect, not pretty
     SquareSize = Calculate_square_size()
 
     BoardWidth = SquareSize * 8

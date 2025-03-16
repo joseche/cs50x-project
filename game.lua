@@ -1,7 +1,9 @@
 local game = {}
 
--- ratings as example
-Ratings = { 1150, 1173, 1168, 1176, 1183, 1191, 1198, 1193, 1199, 1205 }
+Debug = true                -- to print verbose messages
+Ratings = { DefaultRating } -- this will be loaded in game.load
+Puzzles = {}                -- To store puzzles indexed by rating
+
 
 Main_menu = {
     buttons = {
@@ -11,7 +13,7 @@ Main_menu = {
             height = 40,
             clicked = false,
             fnt = function()
-                print("Next Puzzle btn")
+                game.load_random_puzzle()
             end
         },
         {
@@ -51,8 +53,43 @@ for i = 400, 2000, 100 do
     table.insert(LevelDropdown.options, i)
 end
 
+function game.debug(msg)
+    if Debug then
+        print(msg)
+    end
+end
+
+function UserRating()
+    return Ratings[#Ratings]
+end
+
+function game.rating_to_level(rating)
+    return math.floor(rating / 100) * 100
+end
+
+function game.current_level()
+    if LevelDropdown.selected == "Auto" then
+        return game.rating_to_level(UserRating())
+    else
+        return LevelDropdown.selected
+    end
+end
+
+function game.add_rating(new_rating)
+    game.debug("adding user rating " .. new_rating)
+    table.insert(Ratings, new_rating)
+end
+
+function RatingRoundDown(rating)
+    return math.floor(rating / RatingRoundingFactor) * RatingRoundingFactor
+end
+
+function RatingRoundUp(rating)
+    return math.ceil(rating / RatingRoundingFactor) * RatingRoundingFactor
+end
 
 function game.load()
+    CalculateRelativeScreenVariables()
     love.graphics.setDefaultFilter("nearest", "nearest") -- according to the lecture this improves rendering of lines
     PricesSprites = love.graphics.newImage("resources/pieces.png")
     BoardTilesSprites = love.graphics.newImage("resources/board-tiles-64x64.png")
@@ -89,19 +126,21 @@ function game.load()
             PricesSprites)
     }
 
-    -- Variables to track clicked squares
+    -- Variables to track clicked squares, I have to make this into a list of events happening
     SelectedSquare = nil -- Currently selected square
     NewSquare = nil      -- Newly clicked square
     BlinkTimer = 0       -- Timer for blinking
     BlinkCount = 0       -- Number of blinks completed
     IsBlinking = false   -- Whether blinking is active
+
+    game.load_user_ratings()
+    game.load_puzzles_by_rating(UserRating())
 end
 
 game.draw = function()
-    -- love.graphics.clear(SoftGray) -- Dark gray background for contrast
     game.draw_background()
     game.draw_empty_board()
-    game.draw_pieces_start_position()
+    -- game.draw_pieces_start_position()
     game.draw_ratings_graph(Ratings, MainMenu_X + 40, 40, MainMenu_Width - 40, 100)
     game.draw_main_menu()
     game.highlight_mouse_pointer()
@@ -272,19 +311,6 @@ game.draw_pieces_start_position = function()
     love.graphics.draw(PricesSprites, PieceQuads['K'], 4 * SquareSize, 7 * SquareSize, 0, PieceScaleFactor)
 end
 
--- this function is only to round the intervals of the graph
-function Dynamic_round(n)
-    local base = 5
-    if n < 5 then
-        base = 5
-    elseif n < 10 then
-        base = 10
-    else
-        base = 20
-    end
-    return math.floor(n / base) * base
-end
-
 game.draw_ratings_graph = function(ratings, x, y, width, height)
     love.graphics.setFont(RatingFont)
     local lastRating = ratings[#ratings]
@@ -294,8 +320,8 @@ game.draw_ratings_graph = function(ratings, x, y, width, height)
 
     local minRating = ratings[1]
     local maxRating = ratings[1]
-
-    for i = 2, #ratings do
+    for i = 2, #ratings do -- this is necessary because the supported version of lua
+        -- used by love doesn't have proper min and max :|
         if ratings[i] < minRating then
             minRating = ratings[i]
         end
@@ -303,10 +329,12 @@ game.draw_ratings_graph = function(ratings, x, y, width, height)
             maxRating = ratings[i]
         end
     end
+    --game.debug("Min rating: " .. minRating .. ", Max rating: " .. maxRating)
+
 
     -- Calculate scaling factors
     local scaleX = width / (#ratings - 1)
-    local scaleY = height / (maxRating - minRating)
+    local scaleY = height / (RatingRoundUp(maxRating) - RatingRoundDown(minRating))
 
     -- Draw the graph background
     love.graphics.setColor(0.2, 0.2, 0.2)
@@ -314,19 +342,21 @@ game.draw_ratings_graph = function(ratings, x, y, width, height)
 
     -- Calculate a dynamic guide line interval
     local range = maxRating - minRating
-    local numGuides = 3
-    local guideLineInterval = Dynamic_round(range / numGuides)
+    --game.debug("Range between min and max rating: " .. range)
 
-    -- Ensure the interval is at least 5
-    if guideLineInterval < 5 then
-        guideLineInterval = 5
+    local numGuides = 4
+    local graphLineYInterval = math.floor(range / numGuides)
+    if range < 10 then
+        numGuides = 1
+        graphLineYInterval = 5
     end
+    --game.debug("guideline Y interval: " .. graphLineYInterval)
 
     -- Draw horizontal guide lines and labels
     love.graphics.setColor(0.5, 0.5, 0.5) -- Gray for guide lines
-    for ratingLevel = Dynamic_round(minRating + guideLineInterval), maxRating, guideLineInterval do
+    for ratingLevel = RatingRoundDown(minRating), RatingRoundUp(maxRating), graphLineYInterval do
         -- Calculate the Y position of the guide line
-        local yLine = y + height - (ratingLevel - minRating) * scaleY
+        local yLine = y + height - (ratingLevel - RatingRoundDown(minRating)) * scaleY
         love.graphics.line(x, yLine, x + width, yLine)
         love.graphics.print(ratingLevel, x - 50, yLine - 10) -- Adjust position for label
     end
@@ -380,6 +410,73 @@ game.draw_level_selector = function()
             love.graphics.print(option, LevelDropdown.x + 10, optionY + 4)
         end
     end
+end
+
+
+function game.load_user_ratings()
+    local ratings = {}
+    game.debug("loading user ratings")
+    -- if the file doesn't exist, create with default rating
+    if not love.filesystem.getInfo(UserRatingsFile) then
+        local default_data = DefaultRating
+        love.filesystem.write(UserRatingsFile, default_data)
+    end
+
+    local content, err = love.filesystem.read(UserRatingsFile)
+    if not content then
+        error("Could not read user ratings file: " .. UserRatingsFile .. ", error: " .. err)
+    end
+
+    for rating in content:gmatch("%d+") do
+        table.insert(ratings, tonumber(rating))
+    end
+    Ratings = ratings
+end
+
+function game.write_user_ratings()
+    game.debug("saving user ratings")
+    local data = table.concat(Ratings, ", ")
+    love.filesystem.write(UserRatingsFile, data)
+end
+
+function game.load_puzzles_by_rating(rating)
+    local level = math.floor(rating / 100) * 100
+
+    -- Check if puzzles for this rating are already loaded
+    if Puzzles[level] then
+        return Puzzles[level]
+    end
+    game.debug("loading level " .. level .. " for rating: " .. rating)
+
+    -- Load puzzles from file if not already in memory
+    local filename = "lichess-db/level_" .. level .. ".csv"
+    local file = love.filesystem.read(filename)
+
+    if file then
+        local puzzleList = {}
+        for line in file:gmatch("[^\r\n]+") do
+            table.insert(puzzleList, line)
+        end
+        Puzzles[level] = puzzleList -- Store in memory
+        game.debug("loaded " .. #puzzleList .. " puzzles in memory")
+        return puzzleList
+    else
+        print("Failed to load " .. filename)
+        return nil
+    end
+end
+
+function game.load_random_puzzle()
+    game.debug("choosing a random puzzle")
+    local level = game.current_level()
+    local options = game.load_puzzles_by_rating(level)
+    local randomIndex = math.random(#options)
+    local randomPuzzle = options[randomIndex]
+    game.debug(" selected random index: " .. randomIndex .. ", puzzle: " .. randomPuzzle)
+end
+
+function game.quit()
+    game.write_user_ratings()
 end
 
 return game

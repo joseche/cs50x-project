@@ -86,6 +86,11 @@ function love.mousepressed(x, y, button)
 					LevelDropdown.selected = option
 					LevelDropdown.isOpen = false
 					optionSelected = true
+					if option == "Auto" then
+						game.load_puzzles_by_rating(UserRating())
+					else
+						game.load_puzzles_by_rating(option)
+					end
 					break
 				end
 			end
@@ -113,4 +118,8 @@ function love.update(dt)
 			end
 		end
 	end
+end
+
+function love.quit()
+	game.quit()
 end
