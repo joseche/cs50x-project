@@ -47,15 +47,49 @@ function love.mousepressed(x, y, button)
 
 		-- Check if the click is within the chessboard bounds
 		if clickedX >= 0 and clickedX < 8 and clickedY >= 0 and clickedY < 8 then
+			local file = clickedX + 1
+			local rank = 8 - clickedY
+
 			if SelectedSquare == nil then
-				-- No square is currently selected, so select the clicked square
-				SelectedSquare = { x = clickedX, y = clickedY }
+				local cur_board_square = CurrentBoard[file][rank]
+				print("current board position: " .. cur_board_square .. ", file:" .. file .. ",rank:" .. rank)
+				-- No square is currently selected, so select the clicked square if there is a piece there
+				if cur_board_square and cur_board_square ~= "" then
+					SelectedSquare = { file = file, rank = rank }
+					PieceMoving.quad = PieceQuads[cur_board_square]
+					PieceMoving.piece = cur_board_square
+					game.debug("Selected Square:")
+					Pretty_print(SelectedSquare)
+				end
+			elseif file == SelectedSquare.file and rank == SelectedSquare.rank then
+				game.debug("same square selected")
 			else
 				-- A square is already selected, so start blinking
-				NewSquare = { x = clickedX, y = clickedY }
+				-- it doesn't matter if there is no piece in the newsquare
+				NewSquare = { file = file, rank = rank }
 				IsBlinking = true
 				BlinkTimer = 0
 				BlinkCount = 0
+
+				-- this part is the piece animation
+				PieceMoving.isMoving = true
+				PieceMoving.origin_file = SelectedSquare.file
+				PieceMoving.origin_rank = SelectedSquare.rank
+				PieceMoving.target_file = NewSquare.file
+				PieceMoving.target_rank = NewSquare.rank
+
+				CurrentBoard[NewSquare.file][NewSquare.rank] = PieceMoving.piece
+				CurrentBoard[SelectedSquare.file][SelectedSquare.rank] = ""
+
+				PieceMoving.x = (PieceMoving.origin_file - 1) * SquareSize
+				PieceMoving.y = (8 - PieceMoving.origin_rank) * SquareSize
+
+				PieceMoving.targetX = (PieceMoving.target_file - 1) * SquareSize
+				PieceMoving.targetY = (8 - PieceMoving.target_rank) * SquareSize
+
+				PieceMoving.duration = 2
+				PieceMoving.elapsed = 0
+				Pretty_print(PieceMoving)
 			end
 		end
 
@@ -116,6 +150,22 @@ function love.update(dt)
 				IsBlinking = false
 				BlinkCount = 0
 			end
+		end
+	end
+
+	-- animate piece moving
+	if PieceMoving.isMoving then
+		-- Move the piece
+		if PieceMoving.elapsed < PieceMoving.duration then
+			PieceMoving.elapsed = PieceMoving.elapsed + dt
+			local t = PieceMoving.elapsed / PieceMoving.duration
+			if t > 1 then t = 1 end -- Clamp t to 1
+			PieceMoving.x = PieceMoving.x + (PieceMoving.targetX - PieceMoving.x) * t
+			PieceMoving.y = PieceMoving.y + (PieceMoving.targetY - PieceMoving.y) * t
+		else
+			-- Stop moving when close enough to the target
+			PieceMoving.x, PieceMoving.y = PieceMoving.targetX, PieceMoving.targetY
+			PieceMoving.isMoving = false
 		end
 	end
 end

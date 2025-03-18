@@ -20,7 +20,7 @@ PieceSpriteSize = 200 -- this doesn't change, given the sprite png I am using
 BoardTileSpriteSize = 64
 
 RatingRoundingFactor = 5
-DefaultRating = 800
+DefaultRating = 400
 
 UserRatingsFile = "ChessPuzzlesUserRating.txt"
 

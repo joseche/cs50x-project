@@ -4,6 +4,42 @@ Debug = true                -- to print verbose messages
 Ratings = { DefaultRating } -- this will be loaded in game.load
 Puzzles = {}                -- To store puzzles indexed by rating
 
+CurrentPuzzle = {
+    PuzzleId = "",
+    rating = 0,
+    level = 0,
+    FEN = "",
+    themes = "",
+    moves = "",
+    hints = 0,
+}
+
+PieceMoving = {
+    x = 0,            -- Current x position (pixels)
+    y = 0,            -- Current y position (pixels)
+    origin_file = 0,  -- Origin x position (pixels)
+    origin_rank = 0,  -- Origin y position (pixels)
+    target_file = 0,  -- Destination x position (pixels)
+    target_rank = 0,  -- Destination y position (pixels)
+    isMoving = false, -- Whether the piece is currently moving
+    quad = nil,
+    piece = "",
+}
+
+function game.empty_board()
+    return {
+        { "", "", "", "", "", "", "", "", },
+        { "", "", "", "", "", "", "", "", },
+        { "", "", "", "", "", "", "", "", },
+        { "", "", "", "", "", "", "", "", },
+        { "", "", "", "", "", "", "", "", },
+        { "", "", "", "", "", "", "", "", },
+        { "", "", "", "", "", "", "", "", },
+        { "", "", "", "", "", "", "", "", },
+    }
+end
+
+CurrentBoard = game.empty_board()
 
 Main_menu = {
     buttons = {
@@ -135,20 +171,23 @@ function game.load()
 
     game.load_user_ratings()
     game.load_puzzles_by_rating(UserRating())
+    game.load_random_puzzle()
 end
 
-game.draw = function()
+function game.draw()
     game.draw_background()
     game.draw_empty_board()
-    -- game.draw_pieces_start_position()
+    game.draw_current_board()
     game.draw_ratings_graph(Ratings, MainMenu_X + 40, 40, MainMenu_Width - 40, 100)
     game.draw_main_menu()
+    game.draw_level_selector()
+
+    -- dynamic elements
     game.highlight_mouse_pointer()
     game.draw_selected_squares()
-    game.draw_level_selector()
 end
 
-game.draw_background = function()
+function game.draw_background()
     -- Get the screen dimensions
     local screenWidth = love.graphics.getWidth()
     local screenHeight = love.graphics.getHeight()
@@ -166,7 +205,7 @@ game.draw_background = function()
     end
 end
 
-game.draw_main_menu = function()
+function game.draw_main_menu()
     -- Draw buttons
     for i, button in ipairs(Main_menu.buttons) do
         -- Set button color (change if clicked)
@@ -199,21 +238,24 @@ game.draw_main_menu = function()
     end
 end
 
-game.draw_selected_squares = function()
+function game.draw_selected_squares()
     -- Highlight the selected square (if not blinking or during the "on" phase of blinking)
     if SelectedSquare and not (IsBlinking and BlinkCount % 2 == 1) then
         love.graphics.setColor(SelectedSquareColor, 0.5) -- Green outline
-        love.graphics.rectangle("line", SelectedSquare.x * SquareSize, SelectedSquare.y * SquareSize, SquareSize,
+        love.graphics.rectangle("line", (SelectedSquare.file - 1) * SquareSize, (8 - SelectedSquare.rank) * SquareSize,
+            SquareSize,
             SquareSize)
     end
     -- Highlight the new square (if not blinking or during the "on" phase of blinking)
     if NewSquare and not (IsBlinking and BlinkCount % 2 == 1) then
         love.graphics.setColor(SelectedSquareColor, 0.5)
-        love.graphics.rectangle("line", NewSquare.x * SquareSize, NewSquare.y * SquareSize, SquareSize, SquareSize)
+        love.graphics.rectangle("line", (NewSquare.file - 1) * SquareSize, (8 - NewSquare.rank) * SquareSize,
+            SquareSize,
+            SquareSize)
     end
 end
 
-game.highlight_mouse_pointer = function()
+function game.highlight_mouse_pointer()
     local mouseX, mouseY = love.mouse.getPosition()
     local squareFile = math.floor(mouseX / SquareSize)
     local squareRank = math.floor(mouseY / SquareSize)
@@ -227,7 +269,7 @@ game.highlight_mouse_pointer = function()
 end
 
 -- this function is only for testing settings
-game.draw_colors = function()
+function game.draw_colors()
     -- Set background color
     love.graphics.clear(DarkGreyColor) -- Dark gray background for contrast
 
@@ -242,7 +284,7 @@ game.draw_colors = function()
     love.graphics.print("Black Color", 330, 280)
 end
 
-game.draw_empty_board = function()
+function game.draw_empty_board()
     local squareScale = SquareSize / BoardTileSpriteSize
     love.graphics.setColor(WhiteColor)
     love.graphics.rectangle("fill", 0, 0, BoardWidth, BoardWidth)
@@ -282,7 +324,7 @@ game.draw_empty_board = function()
     end
 end
 
-game.draw_pieces_start_position = function()
+function game.draw_pieces_start_position()
     love.graphics.setColor(1, 1, 1)
     for x = 0, 7 do
         local y_pos = 1 * SquareSize
@@ -311,7 +353,13 @@ game.draw_pieces_start_position = function()
     love.graphics.draw(PricesSprites, PieceQuads['K'], 4 * SquareSize, 7 * SquareSize, 0, PieceScaleFactor)
 end
 
-game.draw_ratings_graph = function(ratings, x, y, width, height)
+function game.draw_piece(piece_quad, file, rank)
+    local f = file - 1
+    local r = 8 - rank
+    love.graphics.draw(PricesSprites, piece_quad, f * SquareSize, r * SquareSize, 0, PieceScaleFactor)
+end
+
+function game.draw_ratings_graph(ratings, x, y, width, height)
     love.graphics.setFont(RatingFont)
     local lastRating = ratings[#ratings]
     -- Draw the Y-axis label
@@ -329,8 +377,6 @@ game.draw_ratings_graph = function(ratings, x, y, width, height)
             maxRating = ratings[i]
         end
     end
-    --game.debug("Min rating: " .. minRating .. ", Max rating: " .. maxRating)
-
 
     -- Calculate scaling factors
     local scaleX = width / (#ratings - 1)
@@ -385,7 +431,7 @@ game.draw_ratings_graph = function(ratings, x, y, width, height)
     love.graphics.setColor(1, 1, 1)
 end
 
-game.draw_level_selector = function()
+function game.draw_level_selector()
     LevelDropdown.x = MainMenu_X
     LevelDropdown.y = 200
 
@@ -411,7 +457,6 @@ game.draw_level_selector = function()
         end
     end
 end
-
 
 function game.load_user_ratings()
     local ratings = {}
@@ -466,13 +511,90 @@ function game.load_puzzles_by_rating(rating)
     end
 end
 
+function Split(str, delimiter)
+    local result = {}
+    local pattern = string.format("([^%s]+)", delimiter)
+    for word in string.gmatch(str, pattern) do
+        table.insert(result, word)
+    end
+    return result
+end
+
+function Pretty_print(table, indent)
+    indent = indent or 0                    -- Default indentation level
+    local spaces = string.rep("  ", indent) -- Create indentation spaces
+
+    for key, value in pairs(table) do
+        if type(value) == "table" then
+            -- If the value is a table, recursively pretty-print it
+            print(spaces .. tostring(key) .. ":")
+            Pretty_print(value, indent + 1) -- Increase indentation for nested tables
+        else
+            -- Otherwise, print the key and value
+            print(spaces .. tostring(key) .. ": " .. tostring(value))
+        end
+    end
+end
+
 function game.load_random_puzzle()
     game.debug("choosing a random puzzle")
     local level = game.current_level()
     local options = game.load_puzzles_by_rating(level)
-    local randomIndex = math.random(#options)
-    local randomPuzzle = options[randomIndex]
-    game.debug(" selected random index: " .. randomIndex .. ", puzzle: " .. randomPuzzle)
+    if options then
+        local randomIndex = math.random(#options)
+        local randomPuzzle = options[randomIndex]
+        game.debug("selected random index: " .. randomIndex)
+        local values = Split(randomPuzzle, ',')
+        CurrentPuzzle.PuzzleId = values[1]
+        CurrentPuzzle.FEN = values[2]
+        CurrentPuzzle.moves = values[3]
+        CurrentPuzzle.rating = values[4]
+        CurrentPuzzle.themes = values[6]
+        CurrentPuzzle.level = level
+        Pretty_print(CurrentPuzzle)
+        game.load_FEN_to_board(CurrentPuzzle.FEN)
+    else
+        print("error loading puzzles for level: " .. level)
+    end
+end
+
+function game.load_FEN_to_board(fen)
+    game.debug("Loading FEN: " .. fen)
+    CurrentBoard = game.empty_board()
+    local rank = 8
+    local file_index = 1
+
+    local space_pos = fen:find(" ")
+    local board_fen = fen:sub(1, space_pos - 1)
+
+    for i = 1, #board_fen do
+        local char = board_fen:sub(i, i)
+        if char == "/" then
+            rank = rank - 1
+            file_index = 1
+        elseif char:match("%d") then
+            file_index = file_index + tonumber(char)
+        elseif PieceQuads[char] then
+            print("file: " .. file_index .. ", rank: " .. rank)
+            CurrentBoard[file_index][rank] = char
+            file_index = file_index + 1
+        end
+    end
+    -- Pretty_print(CurrentBoard)
+end
+
+function game.draw_current_board()
+    for rank = 1, 8 do
+        for file = 1, 8 do
+            if CurrentBoard[file][rank] ~= "" then
+                game.draw_piece(PieceQuads[CurrentBoard[file][rank]], file, rank)
+            end
+        end
+    end
+    if PieceMoving.isMoving then
+        game.debug("drawing moving piece")
+        love.graphics.draw(PricesSprites, PieceMoving.quad, PieceMoving.x, PieceMoving.y, 0, PieceScaleFactor)
+    end
 end
 
 function game.quit()
