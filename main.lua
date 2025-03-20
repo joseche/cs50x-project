@@ -28,6 +28,11 @@ function love.keypressed(key)
 			-- 	love.event.quit()
 		end
 	end
+
+	if key == "f" then
+		local desktopWidth, desktopHeight = love.window.getDesktopDimensions()
+		love.window.setMode(desktopWidth, desktopHeight, { fullscreen = true, fullscreentype = "exclusive" })
+	end
 end
 
 function love.resize(w, h)
@@ -40,29 +45,36 @@ function love.resize(w, h)
 end
 
 function love.mousepressed(x, y, button)
-	if button == 1 then -- Left mouse button
+	if button == 1 and not PieceMoving.isMoving then -- Left mouse button
 		-- Calculate which square was clicked
 		local clickedX = math.floor(x / SquareSize)
 		local clickedY = math.floor(y / SquareSize)
 
 		-- Check if the click is within the chessboard bounds
 		if clickedX >= 0 and clickedX < 8 and clickedY >= 0 and clickedY < 8 then
+			-- inside here is the board logic, probably its better to take code out to functions
 			local file = clickedX + 1
 			local rank = 8 - clickedY
 
 			if SelectedSquare == nil then
-				local cur_board_square = CurrentBoard[file][rank]
-				print("current board position: " .. cur_board_square .. ", file:" .. file .. ",rank:" .. rank)
+				local selected_piece = CurrentBoard[file][rank]
+				if not game.valid_piece_turn(selected_piece) then
+					ErrorSound:play()
+					return -- dont select pieces that are not playing / corresponding turn
+				end
+
+				print("current board position: " .. selected_piece .. ", file:" .. file .. ",rank:" .. rank)
 				-- No square is currently selected, so select the clicked square if there is a piece there
-				if cur_board_square and cur_board_square ~= "" then
+				if selected_piece and selected_piece ~= "" then
 					SelectedSquare = { file = file, rank = rank }
-					PieceMoving.quad = PieceQuads[cur_board_square]
-					PieceMoving.piece = cur_board_square
+					PieceMoving.quad = PieceQuads[selected_piece]
+					PieceMoving.piece = selected_piece
 					game.debug("Selected Square:")
 					Pretty_print(SelectedSquare)
 				end
 			elseif file == SelectedSquare.file and rank == SelectedSquare.rank then
-				game.debug("same square selected")
+				game.debug("same square selected, deselecting it")
+				SelectedSquare = nil
 			else
 				-- A square is already selected, so start blinking
 				-- it doesn't matter if there is no piece in the newsquare
@@ -71,25 +83,31 @@ function love.mousepressed(x, y, button)
 				BlinkTimer = 0
 				BlinkCount = 0
 
-				-- this part is the piece animation
-				PieceMoving.isMoving = true
-				PieceMoving.origin_file = SelectedSquare.file
-				PieceMoving.origin_rank = SelectedSquare.rank
-				PieceMoving.target_file = NewSquare.file
-				PieceMoving.target_rank = NewSquare.rank
+				-- check if the move is correct
+				if game.is_expected_move(SelectedSquare, NewSquare, CurrentPuzzle.moves[CurrentPuzzle.move_index]) then
+					CurrentPuzzle.move_index = CurrentPuzzle.move_index + 1
+					if CurrentPuzzle.move_index > #CurrentPuzzle.moves then
+						-- the user solved all the moves in the puzzle
+						CorrectSound:play()
+						ShowSuccessTimer = 2
+						game.increment_rating()
+					else
+						OnSound:play()
+						print("user clicked the correct move!")
+						PieceMoving.next_func = function()
+							game.start_move(CurrentPuzzle.moves[CurrentPuzzle.move_index], 3)
+							CurrentPuzzle.move_index = CurrentPuzzle.move_index + 1
+							PieceMoving.next_func = nil
+						end
+					end
 
-				CurrentBoard[NewSquare.file][NewSquare.rank] = PieceMoving.piece
-				CurrentBoard[SelectedSquare.file][SelectedSquare.rank] = ""
-
-				PieceMoving.x = (PieceMoving.origin_file - 1) * SquareSize
-				PieceMoving.y = (8 - PieceMoving.origin_rank) * SquareSize
-
-				PieceMoving.targetX = (PieceMoving.target_file - 1) * SquareSize
-				PieceMoving.targetY = (8 - PieceMoving.target_rank) * SquareSize
-
-				PieceMoving.duration = 2
-				PieceMoving.elapsed = 0
-				Pretty_print(PieceMoving)
+					local move = game.squares_to_move(SelectedSquare, NewSquare)
+					game.start_move(move, 2)
+				else
+					-- user selected the wrong move, play error sound(or something!)
+					CurrentPuzzle.errors = CurrentPuzzle.errors + 1
+					ErrorSound:play()
+				end
 			end
 		end
 
@@ -166,7 +184,19 @@ function love.update(dt)
 			-- Stop moving when close enough to the target
 			PieceMoving.x, PieceMoving.y = PieceMoving.targetX, PieceMoving.targetY
 			PieceMoving.isMoving = false
+			CurrentBoard[PieceMoving.target_file][PieceMoving.target_rank] = PieceMoving.piece
+
+			if type(PieceMoving.next_func) == "function" then
+				PieceMoving.next_func()
+			end
 		end
+	end
+
+	if ShowSuccessTimer > 0 then
+		ShowSuccessTimer = ShowSuccessTimer - dt
+	elseif ShowSuccessTimer > -1 then
+		game.load_random_puzzle()
+		ShowSuccessTimer = -1
 	end
 end
 

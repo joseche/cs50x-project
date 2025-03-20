@@ -14,7 +14,7 @@ function love.conf(t)
 
     t.audio.mic = false
 
-    t.modules.audio = false
+    t.modules.audio = true
     t.modules.data = true
     t.modules.event = true
     t.modules.font = true
@@ -25,7 +25,7 @@ function love.conf(t)
     t.modules.math = true
     t.modules.mouse = true
     t.modules.physics = true
-    t.modules.sound = false
+    t.modules.sound = true
     t.modules.system = false
     t.modules.thread = true
     t.modules.timer = true

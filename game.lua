@@ -12,6 +12,7 @@ CurrentPuzzle = {
     themes = "",
     moves = "",
     hints = 0,
+    errors = 0
 }
 
 PieceMoving = {
@@ -25,6 +26,9 @@ PieceMoving = {
     quad = nil,
     piece = "",
 }
+
+ShowSuccessTimer = 0
+WhitesPlay = true
 
 function game.empty_board()
     return {
@@ -58,7 +62,7 @@ Main_menu = {
             height = 40,
             clicked = false,
             fnt = function()
-                print("Hint")
+                CurrentPuzzle.hints = CurrentPuzzle.hints + 1
             end
         },
         {
@@ -116,6 +120,33 @@ function game.add_rating(new_rating)
     table.insert(Ratings, new_rating)
 end
 
+function game.calculate_score(errors, hints)
+    if errors > 0 then
+        return 0
+    elseif hints > 0 then
+        return 1 / hints
+    else
+        return 1
+    end
+end
+
+function game.increment_rating()
+    game.debug("Incrementing rating: ")
+    local user_rating = UserRating()
+    local puzzle_rating = CurrentPuzzle.rating
+    local K_adjust_factor = 40 - (math.abs(puzzle_rating - user_rating) / 50)
+    local Expected_prob_solving = 1 / (1 + 10 ^ ((puzzle_rating - user_rating) / 400))
+    local S = game.calculate_score(CurrentPuzzle.errors, CurrentPuzzle.hints)
+    local rating_change = K_adjust_factor * (S - Expected_prob_solving)
+    game.debug("User rating: " .. user_rating)
+    game.debug("Puzzle rating: " .. puzzle_rating)
+    game.debug("K: " .. K_adjust_factor)
+    game.debug("Expected_prob_solving: " .. Expected_prob_solving)
+    game.debug("S: " .. S)
+    game.debug("Rating change: " .. rating_change)
+    game.add_rating(math.floor(UserRating() + rating_change))
+end
+
 function RatingRoundDown(rating)
     return math.floor(rating / RatingRoundingFactor) * RatingRoundingFactor
 end
@@ -139,6 +170,12 @@ function game.load()
     BackgroundTexture = love.graphics.newImage("resources/background.png")
     BackgroundTextureWidth = BackgroundTexture:getWidth()
     BackgroundTextureHeight = BackgroundTexture:getHeight()
+
+    OnSound = love.audio.newSource("resources/on.wav", "static")
+    ErrorSound = love.audio.newSource("resources/error.ogg", "static")
+    CorrectSound = love.audio.newSource("resources/successful.mp3", "static")
+    NewPuzzle = love.audio.newSource("resources/new_puzzle.wav", "static")
+    SuccessImage = love.graphics.newImage("resources/king-crown.png")
 
     PieceQuads = {
         -- white pieces
@@ -180,11 +217,39 @@ function game.draw()
     game.draw_current_board()
     game.draw_ratings_graph(Ratings, MainMenu_X + 40, 40, MainMenu_Width - 40, 100)
     game.draw_main_menu()
-    game.draw_level_selector()
 
     -- dynamic elements
     game.highlight_mouse_pointer()
+    game.draw_puzzle_information()
+
     game.draw_selected_squares()
+    game.draw_success_symbol()
+    game.draw_level_selector()
+end
+
+function game.valid_piece_turn(piece)
+    if piece == "" then
+        return false
+    end
+    local is_black = piece:match("[kqbnrp]") ~= nil
+    local black_turn = not WhitesPlay
+    if is_black and black_turn then
+        return true
+    end
+    if not is_black and WhitesPlay then
+        return true
+    end
+    return false
+end
+
+function game.draw_success_symbol()
+    if ShowSuccessTimer > 0 and CurrentPuzzle.errors < 1 then
+        love.graphics.setColor(1, 1, 1, ShowSuccessTimer / 2) -- optional fade-out
+        local sw, sh = love.graphics.getDimensions()
+        local iw, ih = SuccessImage:getDimensions()
+        love.graphics.draw(SuccessImage, (sw - iw) / 2, (sh - ih) / 2)
+        love.graphics.setColor(1, 1, 1, 1) -- reset color
+    end
 end
 
 function game.draw_background()
@@ -458,6 +523,28 @@ function game.draw_level_selector()
     end
 end
 
+function game.draw_puzzle_information()
+    local reference_x = MainMenu_X
+    local reference_y = 250
+    love.graphics.setColor(0, 0, 0) -- Black
+    if WhitesPlay then
+        love.graphics.print("White plays", reference_x, reference_y)
+    else
+        love.graphics.print("Black plays", reference_x, reference_y)
+    end
+    if #CurrentPuzzle.themes > 1 then
+        love.graphics.print("Theme: " .. CurrentPuzzle.themes[1], reference_x, reference_y + 30)
+    end
+    love.graphics.print("Level: " .. tostring(CurrentPuzzle.level), reference_x, reference_y + 60)
+
+    if CurrentPuzzle.hints > 0 then
+        for i = 1, CurrentPuzzle.hints do
+            love.graphics.print("Hint " .. tostring(i) .. ": " .. CurrentPuzzle.moves[i * 2], reference_x,
+                reference_y + 60 + (i * 30))
+        end
+    end
+end
+
 function game.load_user_ratings()
     local ratings = {}
     game.debug("loading user ratings")
@@ -536,6 +623,26 @@ function Pretty_print(table, indent)
     end
 end
 
+function game.start_move(move, duration)
+    print("Starting move " .. move)
+    PieceMoving.isMoving = true
+    PieceMoving.origin_file = string.byte(move:sub(1, 1)) - string.byte('a') + 1
+    PieceMoving.origin_rank = tonumber(move:sub(2, 2))
+    PieceMoving.target_file = string.byte(move:sub(3, 3)) - string.byte('a') + 1
+    PieceMoving.target_rank = tonumber(move:sub(4, 4))
+    PieceMoving.piece = CurrentBoard[PieceMoving.origin_file][PieceMoving.origin_rank]
+    PieceMoving.quad = PieceQuads[PieceMoving.piece]
+    CurrentBoard[PieceMoving.target_file][PieceMoving.target_rank] = ""
+    CurrentBoard[PieceMoving.origin_file][PieceMoving.origin_rank] = ""
+    PieceMoving.x = (PieceMoving.origin_file - 1) * SquareSize
+    PieceMoving.y = (8 - PieceMoving.origin_rank) * SquareSize
+    PieceMoving.targetX = (PieceMoving.target_file - 1) * SquareSize
+    PieceMoving.targetY = (8 - PieceMoving.target_rank) * SquareSize
+    PieceMoving.duration = duration
+    PieceMoving.elapsed = 0
+    WhitesPlay = not WhitesPlay
+end
+
 function game.load_random_puzzle()
     game.debug("choosing a random puzzle")
     local level = game.current_level()
@@ -547,12 +654,20 @@ function game.load_random_puzzle()
         local values = Split(randomPuzzle, ',')
         CurrentPuzzle.PuzzleId = values[1]
         CurrentPuzzle.FEN = values[2]
-        CurrentPuzzle.moves = values[3]
+        CurrentPuzzle.moves = Split(values[3], " ")
         CurrentPuzzle.rating = values[4]
-        CurrentPuzzle.themes = values[6]
+        CurrentPuzzle.themes = Split(values[6], " ")
         CurrentPuzzle.level = level
+        CurrentPuzzle.move_index = 2
+        CurrentPuzzle.UserTurn = true
+        CurrentPuzzle.hints = 0
+        CurrentPuzzle.errors = 0
         Pretty_print(CurrentPuzzle)
         game.load_FEN_to_board(CurrentPuzzle.FEN)
+        NewPuzzle:play()
+        -- read the first move, and start moving the piece
+        local move = CurrentPuzzle.moves[1]
+        game.start_move(move, 4)
     else
         print("error loading puzzles for level: " .. level)
     end
@@ -575,12 +690,13 @@ function game.load_FEN_to_board(fen)
         elseif char:match("%d") then
             file_index = file_index + tonumber(char)
         elseif PieceQuads[char] then
-            print("file: " .. file_index .. ", rank: " .. rank)
+            -- print("file: " .. file_index .. ", rank: " .. rank)
             CurrentBoard[file_index][rank] = char
             file_index = file_index + 1
         end
     end
-    -- Pretty_print(CurrentBoard)
+    WhitesPlay = fen:find(" w ") ~= nil
+    game.debug("White's turn: " .. tostring(WhitesPlay))
 end
 
 function game.draw_current_board()
@@ -592,9 +708,27 @@ function game.draw_current_board()
         end
     end
     if PieceMoving.isMoving then
-        game.debug("drawing moving piece")
+        if math.random() > 0.9 then -- this is just to reduce the number of prints
+            game.debug("drawing moving piece at (" .. PieceMoving.x .. "," .. PieceMoving.y .. ")")
+        end
         love.graphics.draw(PricesSprites, PieceMoving.quad, PieceMoving.x, PieceMoving.y, 0, PieceScaleFactor)
     end
+end
+
+function game.squares_to_move(initial_square, final_square)
+    -- transform the selected squares into UCI format
+    local files = { 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h' }
+    local origin_square = files[initial_square.file] .. initial_square.rank
+    local target_square = files[final_square.file] .. final_square.rank
+    local user_move = origin_square .. target_square
+    return user_move
+end
+
+function game.is_expected_move(selected_square, new_square, expected_move)
+    local user_move = game.squares_to_move(selected_square, new_square)
+    game.debug("user move: " .. user_move)
+    game.debug("expected move: " .. expected_move)
+    return user_move == expected_move
 end
 
 function game.quit()
