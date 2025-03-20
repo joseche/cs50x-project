@@ -98,6 +98,7 @@ function love.mousepressed(x, y, button)
 							game.start_move(CurrentPuzzle.moves[CurrentPuzzle.move_index], 2)
 							CurrentPuzzle.move_index = CurrentPuzzle.move_index + 1
 							PieceMoving.next_func = nil
+							ComputerMove:play()
 						end
 					end
 

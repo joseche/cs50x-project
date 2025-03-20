@@ -179,7 +179,8 @@ function game.load()
     ErrorSound = love.audio.newSource("resources/error.ogg", "static")
     CorrectSound = love.audio.newSource("resources/successful.mp3", "static")
     NewPuzzle = love.audio.newSource("resources/new_puzzle.wav", "static")
-    SuccessImage = love.graphics.newImage("resources/king-crown.png")
+    ComputerMove = love.audio.newSource("resources/computer_move.wav", "static")
+
 
     PieceQuads = {
         -- white pieces
