@@ -90,12 +90,12 @@ function love.mousepressed(x, y, button)
 						-- the user solved all the moves in the puzzle
 						CorrectSound:play()
 						ShowSuccessTimer = 2
-						game.increment_rating()
+						game.update_rating()
 					else
 						OnSound:play()
 						print("user clicked the correct move!")
 						PieceMoving.next_func = function()
-							game.start_move(CurrentPuzzle.moves[CurrentPuzzle.move_index], 3)
+							game.start_move(CurrentPuzzle.moves[CurrentPuzzle.move_index], 2)
 							CurrentPuzzle.move_index = CurrentPuzzle.move_index + 1
 							PieceMoving.next_func = nil
 						end

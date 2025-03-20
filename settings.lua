@@ -14,7 +14,7 @@ DarkGreyColor = { 0.2, 0.2, 0.2 }
 DarkGreenColor = { 0.0, 0.5, 0.0 }
 SoftGray = { 0.8, 0.8, 0.8 } -- Soft light gray color
 
-SelectedSquareColor = { 0.6, 0.8, 0.1 }
+SelectedSquareColor = { 0.4, 0.6, 0.1 }
 
 PieceSpriteSize = 200 -- this doesn't change, given the sprite png I am using
 BoardTileSpriteSize = 64
@@ -41,6 +41,8 @@ function CalculateRelativeScreenVariables() -- has all global vars updated as si
     LabelFontSize = math.floor(SquareSize / 6)
     MenuFontSize = math.floor(SquareSize / 5)
     RatingFontSize = math.floor(SquareSize / 6)
+    RatingPopUpFontSize = math.floor(SquareSize * 2)
+    print("Font rating " .. tostring(RatingPopUpFontSize))
 
     FileLabelOffsetX = math.floor(SquareSize * 0.8)
     FileLabelOffsetY = math.floor(SquareSize * 0.26)

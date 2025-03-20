@@ -11,8 +11,10 @@ CurrentPuzzle = {
     FEN = "",
     themes = "",
     moves = "",
+    last_move = "",
     hints = 0,
-    errors = 0
+    errors = 0,
+    rating_change = 0
 }
 
 PieceMoving = {
@@ -130,14 +132,15 @@ function game.calculate_score(errors, hints)
     end
 end
 
-function game.increment_rating()
-    game.debug("Incrementing rating: ")
+function game.update_rating()
+    game.debug("Update rating: ")
     local user_rating = UserRating()
     local puzzle_rating = CurrentPuzzle.rating
     local K_adjust_factor = 40 - (math.abs(puzzle_rating - user_rating) / 50)
     local Expected_prob_solving = 1 / (1 + 10 ^ ((puzzle_rating - user_rating) / 400))
     local S = game.calculate_score(CurrentPuzzle.errors, CurrentPuzzle.hints)
-    local rating_change = K_adjust_factor * (S - Expected_prob_solving)
+    local rating_change = math.floor(K_adjust_factor * (S - Expected_prob_solving))
+    CurrentPuzzle.rating_change = rating_change
     game.debug("User rating: " .. user_rating)
     game.debug("Puzzle rating: " .. puzzle_rating)
     game.debug("K: " .. K_adjust_factor)
@@ -166,6 +169,7 @@ function game.load()
     LabelFont = love.graphics.newFont("resources/labelFont.ttf", LabelFontSize)
     MenuFont = love.graphics.newFont("resources/labelFont.ttf", MenuFontSize)
     RatingFont = love.graphics.newFont("resources/labelFont.ttf", RatingFontSize)
+    RatingPopUpFont = love.graphics.newFont("resources/labelFont.ttf", RatingPopUpFontSize)
 
     BackgroundTexture = love.graphics.newImage("resources/background.png")
     BackgroundTextureWidth = BackgroundTexture:getWidth()
@@ -242,16 +246,6 @@ function game.valid_piece_turn(piece)
     return false
 end
 
-function game.draw_success_symbol()
-    if ShowSuccessTimer > 0 and CurrentPuzzle.errors < 1 then
-        love.graphics.setColor(1, 1, 1, ShowSuccessTimer / 2) -- optional fade-out
-        local sw, sh = love.graphics.getDimensions()
-        local iw, ih = SuccessImage:getDimensions()
-        love.graphics.draw(SuccessImage, (sw - iw) / 2, (sh - ih) / 2)
-        love.graphics.setColor(1, 1, 1, 1) -- reset color
-    end
-end
-
 function game.draw_background()
     -- Get the screen dimensions
     local screenWidth = love.graphics.getWidth()
@@ -305,19 +299,22 @@ end
 
 function game.draw_selected_squares()
     -- Highlight the selected square (if not blinking or during the "on" phase of blinking)
+    love.graphics.setBlendMode("add")                    -- normal
     if SelectedSquare and not (IsBlinking and BlinkCount % 2 == 1) then
-        love.graphics.setColor(SelectedSquareColor, 0.5) -- Green outline
-        love.graphics.rectangle("line", (SelectedSquare.file - 1) * SquareSize, (8 - SelectedSquare.rank) * SquareSize,
+        love.graphics.setColor(SelectedSquareColor, 0.2) -- Green outline
+        love.graphics.rectangle("fill", (SelectedSquare.file - 1) * SquareSize, (8 - SelectedSquare.rank) * SquareSize,
             SquareSize,
             SquareSize)
     end
     -- Highlight the new square (if not blinking or during the "on" phase of blinking)
     if NewSquare and not (IsBlinking and BlinkCount % 2 == 1) then
-        love.graphics.setColor(SelectedSquareColor, 0.5)
-        love.graphics.rectangle("line", (NewSquare.file - 1) * SquareSize, (8 - NewSquare.rank) * SquareSize,
+        -- love.graphics.setColor(SelectedSquareColor, 0.2)
+        love.graphics.setColor(0, 1, 0, 0.2)
+        love.graphics.rectangle("fill", (NewSquare.file - 1) * SquareSize, (8 - NewSquare.rank) * SquareSize,
             SquareSize,
             SquareSize)
     end
+    love.graphics.setBlendMode("alpha") -- normal
 end
 
 function game.highlight_mouse_pointer()
@@ -351,9 +348,8 @@ end
 
 function game.draw_empty_board()
     local squareScale = SquareSize / BoardTileSpriteSize
-    love.graphics.setColor(WhiteColor)
+    love.graphics.setColor(1, 1, 1, 1)
     love.graphics.rectangle("fill", 0, 0, BoardWidth, BoardWidth)
-    love.graphics.setColor(BlackColor)
     for x = 0, 7 do
         for y = 0, 7 do
             if (x + y) % 2 == 1 then
@@ -421,6 +417,7 @@ end
 function game.draw_piece(piece_quad, file, rank)
     local f = file - 1
     local r = 8 - rank
+    love.graphics.setColor(1, 1, 1, 1)
     love.graphics.draw(PricesSprites, piece_quad, f * SquareSize, r * SquareSize, 0, PieceScaleFactor)
 end
 
@@ -499,6 +496,7 @@ end
 function game.draw_level_selector()
     LevelDropdown.x = MainMenu_X
     LevelDropdown.y = 200
+    love.graphics.setFont(RatingFont)
 
     -- Draw the dropdown box
     love.graphics.setColor(0.8, 0.8, 0.8) -- Light gray
@@ -537,10 +535,13 @@ function game.draw_puzzle_information()
     end
     love.graphics.print("Level: " .. tostring(CurrentPuzzle.level), reference_x, reference_y + 60)
 
+    love.graphics.print("Last move: " .. CurrentPuzzle.last_move, reference_x, reference_y + 90)
+
+
     if CurrentPuzzle.hints > 0 then
         for i = 1, CurrentPuzzle.hints do
             love.graphics.print("Hint " .. tostring(i) .. ": " .. CurrentPuzzle.moves[i * 2], reference_x,
-                reference_y + 60 + (i * 30))
+                reference_y + 90 + (i * 30))
         end
     end
 end
@@ -625,6 +626,7 @@ end
 
 function game.start_move(move, duration)
     print("Starting move " .. move)
+    CurrentPuzzle.last_move = move
     PieceMoving.isMoving = true
     PieceMoving.origin_file = string.byte(move:sub(1, 1)) - string.byte('a') + 1
     PieceMoving.origin_rank = tonumber(move:sub(2, 2))
@@ -729,6 +731,31 @@ function game.is_expected_move(selected_square, new_square, expected_move)
     game.debug("user move: " .. user_move)
     game.debug("expected move: " .. expected_move)
     return user_move == expected_move
+end
+
+function game.draw_success_symbol()
+    -- if ShowSuccessTimer > 0 and CurrentPuzzle.errors < 1 then
+    local sw, sh = SquareSize * 8, SquareSize * 8
+    love.graphics.setFont(RatingPopUpFont)
+
+    -- local iw, ih = SuccessImage:getDimensions()
+    -- love.graphics.draw(SuccessImage, (sw - iw) / 2, (sh - ih) / 2)
+    local rating_change_popup
+    if CurrentPuzzle.rating_change > 0 then
+        rating_change_popup = "+" .. tostring(CurrentPuzzle.rating_change)
+        love.graphics.setColor(0, 1, 0, ShowSuccessTimer / 2)
+    else
+        rating_change_popup = tostring(CurrentPuzzle.rating_change)
+        love.graphics.setColor(1, 0, 0, ShowSuccessTimer / 2)
+    end
+    local textWidth = RatingPopUpFont:getWidth(rating_change_popup)
+    local textHeight = RatingPopUpFont:getHeight()
+    local x = (sw - textWidth) / 2
+    local y = (sh - textHeight) / 2
+
+    love.graphics.print(rating_change_popup, x, y)
+    love.graphics.setColor(1, 1, 1, 1) -- reset color
+    -- end
 end
 
 function game.quit()
