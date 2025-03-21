@@ -42,7 +42,6 @@ function CalculateRelativeScreenVariables() -- has all global vars updated as si
     MenuFontSize = math.floor(SquareSize / 5)
     RatingFontSize = math.floor(SquareSize / 6)
     RatingPopUpFontSize = math.floor(SquareSize * 2)
-    print("Font rating " .. tostring(RatingPopUpFontSize))
 
     FileLabelOffsetX = math.floor(SquareSize * 0.8)
     FileLabelOffsetY = math.floor(SquareSize * 0.26)

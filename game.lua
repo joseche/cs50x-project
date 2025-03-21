@@ -14,7 +14,8 @@ CurrentPuzzle = {
     last_move = "",
     hints = 0,
     errors = 0,
-    rating_change = 0
+    rating_change = 0,
+    last_hint = ""
 }
 
 PieceMoving = {
@@ -64,7 +65,14 @@ Main_menu = {
             height = 40,
             clicked = false,
             fnt = function()
-                CurrentPuzzle.hints = CurrentPuzzle.hints + 1
+                local n_moves = #CurrentPuzzle.moves
+                -- we can not have more hints than moves
+                local hint_index = CurrentPuzzle.move_index
+                if hint_index <= n_moves and (CurrentPuzzle.hints * 2 < hint_index) then
+                    CurrentPuzzle.hints = CurrentPuzzle.hints + 1
+                    local move = CurrentPuzzle.moves[hint_index]
+                    SelectedSquare = game.move_to_square(move)
+                end
             end
         },
         {
@@ -85,7 +93,7 @@ LevelDropdown = {
     x = MainMenu_X + 40, -- this is recalculated later
     y = 160,
     width = 100,
-    height = 30,
+    height = 27,
     options = {}, -- filled in the 'for' below
     selected = "Auto",
     isOpen = false
@@ -122,30 +130,28 @@ function game.add_rating(new_rating)
     table.insert(Ratings, new_rating)
 end
 
-function game.calculate_score(errors, hints)
-    if errors > 0 then
-        return 0
-    elseif hints > 0 then
-        return 1 / hints
-    else
-        return 1
-    end
-end
-
 function game.update_rating()
     game.debug("Update rating: ")
     local user_rating = UserRating()
     local puzzle_rating = CurrentPuzzle.rating
     local K_adjust_factor = 40 - (math.abs(puzzle_rating - user_rating) / 50)
     local Expected_prob_solving = 1 / (1 + 10 ^ ((puzzle_rating - user_rating) / 400))
-    local S = game.calculate_score(CurrentPuzzle.errors, CurrentPuzzle.hints)
+    local S = (CurrentPuzzle.errors > 0 and 0) or 1
     local rating_change = math.floor(K_adjust_factor * (S - Expected_prob_solving))
+
+    -- if the user got at least one hint, reduce the positive change
+    -- it will be also reasonable not to increase?
+    if S == 1 and CurrentPuzzle.hints > 0 then
+        rating_change = math.floor(rating_change / (CurrentPuzzle.hints + 1))
+    end
+
     CurrentPuzzle.rating_change = rating_change
     game.debug("User rating: " .. user_rating)
     game.debug("Puzzle rating: " .. puzzle_rating)
     game.debug("K: " .. K_adjust_factor)
     game.debug("Expected_prob_solving: " .. Expected_prob_solving)
     game.debug("S: " .. S)
+    game.debug("Hints used: " .. tostring(CurrentPuzzle.hints))
     game.debug("Rating change: " .. rating_change)
     game.add_rating(math.floor(UserRating() + rating_change))
 end
@@ -300,21 +306,21 @@ end
 
 function game.draw_selected_squares()
     -- Highlight the selected square (if not blinking or during the "on" phase of blinking)
-    love.graphics.setBlendMode("add")                    -- normal
+    love.graphics.setBlendMode("add")    -- normal
+    love.graphics.setColor(0, 1, 0, 0.2) -- Green outline
+
     if SelectedSquare and not (IsBlinking and BlinkCount % 2 == 1) then
-        love.graphics.setColor(SelectedSquareColor, 0.2) -- Green outline
         love.graphics.rectangle("fill", (SelectedSquare.file - 1) * SquareSize, (8 - SelectedSquare.rank) * SquareSize,
             SquareSize,
             SquareSize)
     end
     -- Highlight the new square (if not blinking or during the "on" phase of blinking)
     if NewSquare and not (IsBlinking and BlinkCount % 2 == 1) then
-        -- love.graphics.setColor(SelectedSquareColor, 0.2)
-        love.graphics.setColor(0, 1, 0, 0.2)
         love.graphics.rectangle("fill", (NewSquare.file - 1) * SquareSize, (8 - NewSquare.rank) * SquareSize,
             SquareSize,
             SquareSize)
     end
+
     love.graphics.setBlendMode("alpha") -- normal
 end
 
@@ -543,6 +549,7 @@ function game.draw_puzzle_information()
         for i = 1, CurrentPuzzle.hints do
             love.graphics.print("Hint " .. tostring(i) .. ": " .. CurrentPuzzle.moves[i * 2], reference_x,
                 reference_y + 90 + (i * 30))
+            CurrentPuzzle.last_hint = CurrentPuzzle.moves[i * 2]
         end
     end
 end
@@ -634,7 +641,16 @@ function game.start_move(move, duration)
     PieceMoving.target_file = string.byte(move:sub(3, 3)) - string.byte('a') + 1
     PieceMoving.target_rank = tonumber(move:sub(4, 4))
     PieceMoving.piece = CurrentBoard[PieceMoving.origin_file][PieceMoving.origin_rank]
+
+    -- if a pawn reaches the opposite rank, just promote to queen
+    if PieceMoving.target_rank == 8 and PieceMoving.piece == "P" then
+        PieceMoving.piece = "Q"
+    elseif PieceMoving.target_rank == 1 and PieceMoving.piece == "p" then
+        PieceMoving.piece = "q"
+    end
+
     PieceMoving.quad = PieceQuads[PieceMoving.piece]
+
     CurrentBoard[PieceMoving.target_file][PieceMoving.target_rank] = ""
     CurrentBoard[PieceMoving.origin_file][PieceMoving.origin_rank] = ""
     PieceMoving.x = (PieceMoving.origin_file - 1) * SquareSize
@@ -644,6 +660,10 @@ function game.start_move(move, duration)
     PieceMoving.duration = duration
     PieceMoving.elapsed = 0
     WhitesPlay = not WhitesPlay
+
+    SelectedSquare = { file = PieceMoving.origin_file, rank = PieceMoving.origin_rank }
+    NewSquare = { file = PieceMoving.target_file, rank = PieceMoving.target_rank }
+    IsBlinking = true
 end
 
 function game.load_random_puzzle()
@@ -665,6 +685,7 @@ function game.load_random_puzzle()
         CurrentPuzzle.UserTurn = true
         CurrentPuzzle.hints = 0
         CurrentPuzzle.errors = 0
+        CurrentPuzzle.last_hint = ""
         Pretty_print(CurrentPuzzle)
         game.load_FEN_to_board(CurrentPuzzle.FEN)
         NewPuzzle:play()
@@ -711,11 +732,17 @@ function game.draw_current_board()
         end
     end
     if PieceMoving.isMoving then
-        if math.random() > 0.9 then -- this is just to reduce the number of prints
+        if math.random() > 0.97 then -- this is just to reduce the number of prints
             game.debug("drawing moving piece at (" .. PieceMoving.x .. "," .. PieceMoving.y .. ")")
         end
         love.graphics.draw(PricesSprites, PieceMoving.quad, PieceMoving.x, PieceMoving.y, 0, PieceScaleFactor)
     end
+end
+
+function game.move_to_square(move)
+    local file = string.byte(move:sub(1, 1)) - string.byte('a') + 1
+    local rank = tonumber(move:sub(2, 2))
+    return { file = file, rank = rank }
 end
 
 function game.squares_to_move(initial_square, final_square)
@@ -731,7 +758,7 @@ function game.is_expected_move(selected_square, new_square, expected_move)
     local user_move = game.squares_to_move(selected_square, new_square)
     game.debug("user move: " .. user_move)
     game.debug("expected move: " .. expected_move)
-    return user_move == expected_move
+    return string.sub(user_move, 1, 4) == string.sub(expected_move, 1, 4)
 end
 
 function game.draw_success_symbol()

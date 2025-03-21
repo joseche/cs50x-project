@@ -46,6 +46,7 @@ end
 
 function love.mousepressed(x, y, button)
 	if button == 1 and not PieceMoving.isMoving then -- Left mouse button
+		--if button == 1 then -- Left mouse button
 		-- Calculate which square was clicked
 		local clickedX = math.floor(x / SquareSize)
 		local clickedY = math.floor(y / SquareSize)
