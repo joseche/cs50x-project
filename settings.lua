@@ -23,6 +23,7 @@ RatingRoundingFactor = 5
 DefaultRating = 400
 
 UserRatingsFile = "ChessPuzzlesUserRating.txt"
+ResolvedPuzzlesFile = "ChessResolvedPuzzles.txt"
 
 function Calculate_square_size()
     local menu_width = math.max(MenuMinWidth, ScreenWidth - 8 * (ScreenHeight / 8))

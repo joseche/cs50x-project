@@ -3,6 +3,7 @@ local game = {}
 Debug = true                -- to print verbose messages
 Ratings = { DefaultRating } -- this will be loaded in game.load
 Puzzles = {}                -- To store puzzles indexed by rating
+ResolvedPuzzles = {}
 
 CurrentPuzzle = {
     PuzzleId = "",
@@ -110,6 +111,9 @@ function game.debug(msg)
 end
 
 function UserRating()
+    if #Ratings == 0 then
+        table.insert(Ratings, DefaultRating)
+    end
     return Ratings[#Ratings]
 end
 
@@ -128,6 +132,11 @@ end
 function game.add_rating(new_rating)
     game.debug("adding user rating " .. new_rating)
     table.insert(Ratings, new_rating)
+end
+
+function game.add_resolved_puzzle(puzzle_id)
+    game.debug("adding resolved puzzle " .. puzzle_id)
+    table.insert(ResolvedPuzzles, puzzle_id)
 end
 
 function game.update_rating()
@@ -218,7 +227,17 @@ function game.load()
     IsBlinking = false   -- Whether blinking is active
 
     game.load_user_ratings()
-    game.load_puzzles_by_rating(UserRating())
+    game.load_resolved_puzzles()
+
+    local user_rating = UserRating()
+    game.debug("user rating: " .. tostring(user_rating))
+    if user_rating == nil then
+        game.debug("warning: user rating is nil")
+        game.load_puzzles_by_rating(DefaultRating)
+    else
+        game.load_puzzles_by_rating(user_rating)
+    end
+
     game.load_random_puzzle()
 end
 
@@ -534,17 +553,17 @@ function game.draw_puzzle_information()
     love.graphics.setColor(0, 0, 0) -- Black
     if WhitesPlay then
         love.graphics.print("White plays", reference_x, reference_y)
+        --game.draw_piece(PieceQuads["P"], 10, 4)
     else
         love.graphics.print("Black plays", reference_x, reference_y)
+        --game.draw_piece(PieceQuads["p"], 10, 4)
     end
+    love.graphics.setColor(0, 0, 0) -- Black
     if #CurrentPuzzle.themes > 1 then
         love.graphics.print("Theme: " .. CurrentPuzzle.themes[1], reference_x, reference_y + 30)
     end
     love.graphics.print("Level: " .. tostring(CurrentPuzzle.level), reference_x, reference_y + 60)
-
     love.graphics.print("Last move: " .. CurrentPuzzle.last_move, reference_x, reference_y + 90)
-
-
     if CurrentPuzzle.hints > 0 then
         for i = 1, CurrentPuzzle.hints do
             love.graphics.print("Hint " .. tostring(i) .. ": " .. CurrentPuzzle.moves[i * 2], reference_x,
@@ -574,13 +593,39 @@ function game.load_user_ratings()
     Ratings = ratings
 end
 
+function game.load_resolved_puzzles()
+    local resolved_puzzles = {}
+    game.debug("loading resolved puzzles")
+    -- if the file doesn't exist, create with default rating
+    if not love.filesystem.getInfo(ResolvedPuzzlesFile) then
+        love.filesystem.write(ResolvedPuzzlesFile, "")
+    end
+
+    local content, err = love.filesystem.read(ResolvedPuzzlesFile)
+    if content then
+        for puzzleId in content:gmatch("%S+") do
+            table.insert(resolved_puzzles, puzzleId)
+        end
+    else
+        error("Could not read resolved puzzles file: " .. ResolvedPuzzlesFile .. ", error: " .. err)
+    end
+    ResolvedPuzzles = resolved_puzzles
+end
+
 function game.write_user_ratings()
     game.debug("saving user ratings")
     local data = table.concat(Ratings, ", ")
     love.filesystem.write(UserRatingsFile, data)
 end
 
+function game.write_resolved_puzzles()
+    game.debug("saving resolved puzzles")
+    local data = table.concat(ResolvedPuzzles, " ")
+    love.filesystem.write(ResolvedPuzzlesFile, data)
+end
+
 function game.load_puzzles_by_rating(rating)
+    game.debug("loading rating: " .. tostring(rating))
     local level = math.floor(rating / 100) * 100
 
     -- Check if puzzles for this rating are already loaded
@@ -666,13 +711,27 @@ function game.start_move(move, duration)
     IsBlinking = true
 end
 
+function InResolvedPuzzles(puzzle_id)
+    for _, v in ipairs(ResolvedPuzzles) do
+        if v == puzzle_id then return true end
+    end
+    return false
+end
+
 function game.load_random_puzzle()
     game.debug("choosing a random puzzle")
     local level = game.current_level()
+    game.debug("game current level: " .. level)
     local options = game.load_puzzles_by_rating(level)
     if options then
         local randomIndex = math.random(#options)
         local randomPuzzle = options[randomIndex]
+
+        while InResolvedPuzzles(randomPuzzle.PuzzleId) do
+            randomIndex = math.random(#options)
+            randomPuzzle = options[randomIndex]
+        end
+
         game.debug("selected random index: " .. randomIndex)
         local values = Split(randomPuzzle, ',')
         CurrentPuzzle.PuzzleId = values[1]
@@ -788,6 +847,7 @@ end
 
 function game.quit()
     game.write_user_ratings()
+    game.write_resolved_puzzles()
 end
 
 return game
