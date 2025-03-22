@@ -101,6 +101,7 @@ function love.mousepressed(x, y, button)
 						-- the user solved all the moves in the puzzle
 						CorrectSound:play()
 						ShowSuccessTimer = 2
+						game.add_resolved_puzzle(CurrentPuzzle.PuzzleId)
 						game.update_rating()
 					else
 						OnSound:play()

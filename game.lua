@@ -605,6 +605,7 @@ function game.load_resolved_puzzles()
     if content then
         for puzzleId in content:gmatch("%S+") do
             table.insert(resolved_puzzles, puzzleId)
+            game.debug("Puzzle ID: " .. puzzleId)
         end
     else
         error("Could not read resolved puzzles file: " .. ResolvedPuzzlesFile .. ", error: " .. err)
@@ -712,8 +713,12 @@ function game.start_move(move, duration)
 end
 
 function InResolvedPuzzles(puzzle_id)
+    game.debug("checking puzzle id: " .. puzzle_id)
     for _, v in ipairs(ResolvedPuzzles) do
-        if v == puzzle_id then return true end
+        if v == puzzle_id then
+            game.debug("Puzzle ID: " .. puzzle_id .. " already resolved")
+            return true
+        end
     end
     return false
 end
@@ -726,14 +731,16 @@ function game.load_random_puzzle()
     if options then
         local randomIndex = math.random(#options)
         local randomPuzzle = options[randomIndex]
+        local values = Split(randomPuzzle, ',')
 
-        while InResolvedPuzzles(randomPuzzle.PuzzleId) do
+
+        while InResolvedPuzzles(values[1]) do
             randomIndex = math.random(#options)
             randomPuzzle = options[randomIndex]
+            values = Split(randomPuzzle, ',')
         end
 
         game.debug("selected random index: " .. randomIndex)
-        local values = Split(randomPuzzle, ',')
         CurrentPuzzle.PuzzleId = values[1]
         CurrentPuzzle.FEN = values[2]
         CurrentPuzzle.moves = Split(values[3], " ")
