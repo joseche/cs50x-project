@@ -42,6 +42,16 @@ function love.resize(w, h)
 	LabelFont = love.graphics.newFont("resources/labelFont.ttf", LabelFontSize)
 	MenuFont = love.graphics.newFont("resources/labelFont.ttf", MenuFontSize)
 	RatingFont = love.graphics.newFont("resources/labelFont.ttf", RatingFontSize)
+
+
+	if not love.window ~= nil then
+		local _, _, flags = love.window.getMode()
+		if flags.fullscreen then
+			MainMenu_X = math.floor((SquareSize * 8) + 20)
+			MainMenu_Y = math.floor(SquareSize * 6) + 60
+			MainMenu_Width = ScreenWidth - MainMenu_X - 10
+		end
+	end
 end
 
 function love.mousepressed(x, y, button)
@@ -96,7 +106,7 @@ function love.mousepressed(x, y, button)
 						OnSound:play()
 						print("user clicked the correct move!")
 						PieceMoving.next_func = function()
-							game.start_move(CurrentPuzzle.moves[CurrentPuzzle.move_index], 2)
+							game.start_move(CurrentPuzzle.moves[CurrentPuzzle.move_index], 1)
 							CurrentPuzzle.move_index = CurrentPuzzle.move_index + 1
 							PieceMoving.next_func = nil
 							ComputerMove:play()

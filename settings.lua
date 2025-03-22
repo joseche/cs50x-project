@@ -48,6 +48,7 @@ function CalculateRelativeScreenVariables() -- has all global vars updated as si
     RankLabelOffsetX = math.floor(SquareSize * 0.1)
     RankLabelOffsetY = math.floor(SquareSize * 0.1)
 
+
     MainMenu_X = math.floor((SquareSize * 8) + 20)
     MainMenu_Y = math.floor(SquareSize * 6)
     MainMenu_Width = ScreenWidth - MainMenu_X - 10
