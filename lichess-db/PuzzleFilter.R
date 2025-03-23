@@ -13,8 +13,8 @@ library(dplyr)
 # load the source db
 db <- read.csv("~/git/cs50x-project/lichess-db/lichess_db_puzzle.csv")
 db <- db %>%
-  filter(Rating >= 400 & Rating < 2100)
-# remove cols that we dont need
+  filter(Rating >= 600 & Popularity < 70 & Rating < 2100)
+# remove cols that we don't need
 db$RatingDeviation <- NULL
 db$NbPlays <- NULL
 db$GameUrl <- NULL
@@ -30,14 +30,14 @@ db$Level <- (db$Rating %/% 100) * 100
 db <- db %>%
     group_by(Level) %>%
     arrange(desc(Popularity), .by_group = TRUE) %>%
-    slice_head(n = 1000)
+    slice_head(n = 5000)
 
 # split by levels
 split_db <- db %>%
   group_split(Level)
 
 
-# save each dataframe into a separate CSV file
+# save each data frame into a separate CSV file
 for (df in split_db) {
   level <- df$Level[1]  # Extract the level value
   file_name <- paste0("level_", level, ".csv")  # Create the file name

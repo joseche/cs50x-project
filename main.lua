@@ -41,6 +41,8 @@ function love.resize(w, h)
 	game.debug("love resize")
 	ScreenWidth = w
 	ScreenHeight = h
+	settings.update_relative_vars()
+	game.resize()
 
 	if love.window then
 		local _, _, flags = love.window.getMode()
@@ -50,8 +52,6 @@ function love.resize(w, h)
 			MainMenu_Width = ScreenWidth - MainMenu_X - 10
 		end
 	end
-	settings.update_relative_vars()
-	game.resize()
 end
 
 function love.mousepressed(x, y, button)

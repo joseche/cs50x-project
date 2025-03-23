@@ -112,7 +112,7 @@ LevelDropdown = {
     isOpen = false
 }
 table.insert(LevelDropdown.options, "Auto")
-for i = 400, 2000, 100 do
+for i = 600, 2000, 100 do
     table.insert(LevelDropdown.options, i)
 end
 
@@ -180,7 +180,7 @@ end
 local PiecesSprites, BoardTilesSprites, WhiteQuad, BlackQuad, LabelFont, MenuFont, RatingFont, RatingPopUpFont,
 BackgroundTexture, BackgroundTextureWidth, BackgroundTextureHeight,
 OnSound, ErrorSound, CorrectSound, NewPuzzleSound, ComputerMoveSound,
-PieceQuads, WhosTurnFont
+PieceQuads, WhoseTurnFont
 
 function game.load()
     settings.update_relative_vars()
@@ -197,7 +197,7 @@ function game.load()
     MenuFont = love.graphics.newFont("resources/labelFont.ttf", MenuFontSize)
     RatingFont = love.graphics.newFont("resources/labelFont.ttf", RatingFontSize)
     RatingPopUpFont = love.graphics.newFont("resources/labelFont.ttf", RatingPopUpFontSize)
-    WhosTurnFont = love.graphics.newFont("resources/labelFont.ttf", LabelFontSize * 2)
+    WhoseTurnFont = love.graphics.newFont("resources/labelFont.ttf", LabelFontSize * 2)
 
     BackgroundTexture = love.graphics.newImage("resources/background.png")
     BackgroundTextureWidth = BackgroundTexture:getWidth()
@@ -561,7 +561,7 @@ function game.draw_puzzle_information()
     local reference_x = MainMenu_X
     local reference_y = 270
     love.graphics.setColor(0, 0, 0) -- Black
-    love.graphics.setFont(WhosTurnFont)
+    love.graphics.setFont(WhoseTurnFont)
     if WhitesPlay then
         love.graphics.print("White plays", reference_x, reference_y)
         --game.draw_piece(PieceQuads["P"], 10, 4)
@@ -1005,6 +1005,13 @@ function game.resize()
     LabelFont = love.graphics.newFont("resources/labelFont.ttf", LabelFontSize)
     MenuFont = love.graphics.newFont("resources/labelFont.ttf", MenuFontSize)
     RatingFont = love.graphics.newFont("resources/labelFont.ttf", RatingFontSize)
+    local _, _, flags = love.window.getMode()
+    if flags.fullscreen then
+        LevelDropdown.height = 27
+    else
+        LevelDropdown.height = 22
+    end
+    game.debug("RatingFontSize: " .. RatingFontSize)
 end
 
 function game.quit()
