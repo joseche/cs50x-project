@@ -13,12 +13,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Install luacheck
-        run: |
-          sudo apt-get -qq update
-          sudo apt-get install -y luacheck
-      - name: Run luacheck
-        run: luacheck .
+      - name: Luacheck linter
+        uses: lunarmodules/luacheck@v1
 
   build-and-release:
     if: startsWith(github.ref, 'refs/tags/')
@@ -37,14 +33,14 @@ jobs:
       - name: Download LOVE2D binaries
         run: |
           mkdir love-dist
-          wget https://github.com/love2d/love/releases/download/11.4/love-11.4-win64.zip
-          wget https://github.com/love2d/love/releases/download/11.4/love-11.4-win32.zip
-          wget https://github.com/love2d/love/releases/download/11.4/love-11.4-linux-x86_64.tar.gz
-          wget https://github.com/love2d/love/releases/download/11.4/love-11.4-macos.zip
-          unzip love-11.4-win64.zip -d love-dist/win64
-          unzip love-11.4-win32.zip -d love-dist/win32
-          tar -xvzf love-11.4-linux-x86_64.tar.gz -C love-dist/linux
-          unzip love-11.4-macos.zip -d love-dist/macos
+          wget https://github.com/love2d/love/releases/download/11.5/love-11.5-win64.zip
+          wget https://github.com/love2d/love/releases/download/11.5/love-11.5-win32.zip
+          wget https://github.com/love2d/love/releases/download/11.5/love-11.5-linux-x86_64.tar.gz
+          wget https://github.com/love2d/love/releases/download/11.5/love-11.5-macos.zip
+          unzip love-11.5-win64.zip -d love-dist/win64
+          unzip love-11.5-win32.zip -d love-dist/win32
+          tar -xvzf love-11.5-linux-x86_64.tar.gz -C love-dist/linux
+          unzip love-11.5-macos.zip -d love-dist/macos
 
       - name: Package Windows executables
         run: |
