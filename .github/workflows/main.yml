@@ -31,9 +31,8 @@ jobs:
           zip -9 -r game.love * -x "*.git*" -x ".*" -x "*.github*"
 
       - name: Upload release assets
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
-          files: |
-            game.love
+          files: game.love
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
