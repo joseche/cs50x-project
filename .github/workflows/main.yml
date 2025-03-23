@@ -1,0 +1,76 @@
+name: Lint, Analyze, and Release LOVE2D Game
+
+on:
+  push:
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install luacheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y luacheck
+      - name: Run luacheck
+        run: luacheck .
+
+  build-and-release:
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Get tag version
+        id: get_version
+        run: echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+
+      - name: Create .love file
+        run: |
+          zip -9 -r game.love * -x "*.git*" -x ".*" -x "*.github*"
+
+      - name: Download LOVE2D binaries
+        run: |
+          mkdir love-dist
+          wget https://github.com/love2d/love/releases/download/11.4/love-11.4-win64.zip
+          wget https://github.com/love2d/love/releases/download/11.4/love-11.4-win32.zip
+          wget https://github.com/love2d/love/releases/download/11.4/love-11.4-linux-x86_64.tar.gz
+          wget https://github.com/love2d/love/releases/download/11.4/love-11.4-macos.zip
+          unzip love-11.4-win64.zip -d love-dist/win64
+          unzip love-11.4-win32.zip -d love-dist/win32
+          tar -xvzf love-11.4-linux-x86_64.tar.gz -C love-dist/linux
+          unzip love-11.4-macos.zip -d love-dist/macos
+
+      - name: Package Windows executables
+        run: |
+          cp game.love love-dist/win64/
+          cd love-dist/win64 && cat love.exe game.love > game.exe && zip -9 -r ../../game-win64.zip * && cd ../..
+          cp game.love love-dist/win32/
+          cd love-dist/win32 && cat love.exe game.love > game.exe && zip -9 -r ../../game-win32.zip * && cd ../..
+
+      - name: Package Linux
+        run: |
+          cp game.love love-dist/linux/
+          cd love-dist/linux && tar -czvf ../../game-linux.tar.gz * && cd ../..
+
+      - name: Package macOS
+        run: |
+          cp game.love love-dist/macos/
+          cd love-dist/macos && zip -9 -r ../../game-macos.zip * && cd ../..
+
+      - name: Upload release assets
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            game.love
+            game-win64.zip
+            game-win32.zip
+            game-linux.tar.gz
+            game-macos.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
