@@ -6,6 +6,7 @@ local game = require("game")
 
 
 function love.load()
+	math.randomseed(os.time())
 	game.debug("love load")
 	settings.update_relative_vars()
 	game.load()
