@@ -27,8 +27,8 @@ $K = 40 - \frac{|P - U|}{50}$
 
 #### Score (S)
 
-- 1 for solving
-- 0.5 solved with hint
+- 1 for solving (without hints)
+- 1/(number of hints used)
 - 0 for failing
 
 #### Expected probability of solving (E)
@@ -41,7 +41,7 @@ Value taken from the puzzle database.
 
 #### User rating (U)
 
-Current user rating, users start with a rating of 1200.
+Current user rating, users start with a rating of 600.
 
 ## Puzzle Database
 
