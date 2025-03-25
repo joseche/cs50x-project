@@ -119,7 +119,7 @@ The most relevant functions in this file are described below:
 
 `game.draw_success_symbol` is basically an overlay on the board, to tell the user how many rating points he earned or lost. One *very* nice feature of this function is that it sets the alpha depending on the _ShowSuccessTimer_ so it fades!
 
-`game.update_blinking`, `game.update_piece_moving` and `game.update_show_success` are called from love.update. Understanding how love.update works, and how its separate from the drawing functions was one of the most important things I learned in this project. 
+`game.update_blinking`, `game.update_piece_moving` and `game.update_show_success` are called from love.update. Understanding how love.update works, and how its separate from the drawing functions was one of the most important things I learned in this project.
 
 In *update_piece_moving* I struggled a lot to get a smooth transition, and it was resolved by using _elapsed_ and _duration_ and interpolating between origin and target based on the time, *not* interpolating on a given distance interval. I still want to improve it, because I think the way it works is a bit slow at the end of the transition, so you can not select a new piece when it seems like the previous piece already reached the destination, but at the moment I don't know how to fix it.
 
