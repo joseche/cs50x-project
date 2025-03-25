@@ -46,8 +46,8 @@ Current user rating, users start with a rating of 600.
 ## Puzzle Database
 
 The database used is available under the Creative Common CC0 1.0 Universal license.
-https://database.lichess.org/#puzzles
-https://database.lichess.org/lichess_db_puzzle.csv.zst
+[https://database.lichess.org/#puzzles]
+[https://database.lichess.org/lichess_db_puzzle.csv.zst]
 
 ### Format of the lichess DB
 
@@ -95,9 +95,9 @@ All the game logic is here and also many global variables. Since the game only u
 
 The most relevant functions in this file are described below:
 
-`game.update_rating` uses a (bit of theory)[https://en.wikipedia.org/wiki/Elo_rating_system] to adjust the points earned or lost depending on the current user rating and the rating of the puzzle.
+`game.update_rating` uses a [bit of theory](https://en.wikipedia.org/wiki/Elo_rating_system) to adjust the points earned or lost depending on the current user rating and the rating of the puzzle.
 
-`game.valid_piece_turn` takes a piece and decides if its a valid piece to move in the current turn. (It uses UCI)[https://en.wikipedia.org/wiki/Universal_Chess_Interface] format.
+`game.valid_piece_turn` takes a piece and decides if its a valid piece to move in the current turn. [It uses UCI](https://en.wikipedia.org/wiki/Universal_Chess_Interface) format.
 
 `game.draw_main_menu` uses the `Main_menu` table to draw the menu on the right, basically using rectangles and printing strings over the rectangles.
 
