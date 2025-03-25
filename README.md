@@ -1,6 +1,6 @@
 # Chess Puzzles
 
-#### Video Demo:  `<URL HERE>`
+#### Video Demo: https://youtu.be/IcPGoaDLKFA
 
 #### Description
 
