@@ -70,7 +70,7 @@ function love.mousepressed(x, y, button)
 			game.board_clicked(file, rank)
 		end
 
-		game.check_level_selector_clicked(x, y)
+		game.check_buttons_clicked(x, y)
 	end
 end
 

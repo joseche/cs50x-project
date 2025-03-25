@@ -11,9 +11,9 @@ library(dplyr)
 
 
 # load the source db
-db <- read.csv("~/git/cs50x-project/lichess-db/lichess_db_puzzle.csv")
+db <- read.csv("~/Downloads/lichess_db_puzzle.csv")
 db <- db %>%
-  filter(Rating >= 600 & Popularity < 70 & Rating < 2100)
+  filter(Rating >= 500 & Popularity < 70 & Rating < 2100)
 # remove cols that we don't need
 db$RatingDeviation <- NULL
 db$NbPlays <- NULL

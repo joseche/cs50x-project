@@ -30,7 +30,6 @@ CurrentPuzzle = {
     last_hint = ""
 }
 
-
 PieceMoving = {
     x = 0,            -- Current x position (pixels)
     y = 0,            -- Current y position (pixels)
@@ -45,6 +44,10 @@ PieceMoving = {
 
 ShowSuccessTimer = 0
 WhitesPlay = true
+
+-- Chessboard labels
+local files = { "a", "b", "c", "d", "e", "f", "g", "h" }
+local ranks = { "8", "7", "6", "5", "4", "3", "2", "1" }
 
 function game.empty_board()
     return {
@@ -275,20 +278,6 @@ function game.valid_piece_turn(piece)
     return false
 end
 
-function game.new_of_same_color_selected(piece)
-    if piece == "" then
-        return false
-    end
-    local is_black = piece:match("[kqbnrp]") ~= nil
-    local black_turn = not WhitesPlay
-    if black_turn and is_black then
-        return true
-    elseif not black_turn and not is_black then
-        return true
-    end
-    return false
-end
-
 function game.draw_background()
     -- Get the screen dimensions
     local screenWidth = love.graphics.getWidth()
@@ -388,9 +377,6 @@ function game.draw_empty_board()
             end
         end
     end
-    -- Chessboard labels
-    local files = { "a", "b", "c", "d", "e", "f", "g", "h" }
-    local ranks = { "8", "7", "6", "5", "4", "3", "2", "1" }
     love.graphics.setFont(LabelFont)
     local file_color
     local rank_color
@@ -413,37 +399,6 @@ function game.draw_empty_board()
     end
 end
 
-function game.draw_pieces_start_position()
-    love.graphics.setColor(1, 1, 1)
-    local S = SquareSize
-    local F = PieceScaleFactor
-    for x = 0, 7 do
-        local y_pos = 1 * S
-        love.graphics.draw(PiecesSprites, PieceQuads['p'], x * S, y_pos, 0, F)
-    end
-    for x = 0, 7 do
-        local y_pos = 6 * S
-        love.graphics.draw(PiecesSprites, PieceQuads['P'], x * S, y_pos, 0, F)
-    end
-
-    love.graphics.draw(PiecesSprites, PieceQuads['r'], 0 * S, 0 * S, 0, F)
-    love.graphics.draw(PiecesSprites, PieceQuads['r'], 7 * S, 0 * S, 0, F)
-    love.graphics.draw(PiecesSprites, PieceQuads['R'], 0 * S, 7 * S, 0, F)
-    love.graphics.draw(PiecesSprites, PieceQuads['R'], 7 * S, 7 * S, 0, F)
-    love.graphics.draw(PiecesSprites, PieceQuads['n'], 1 * S, 0 * S, 0, F)
-    love.graphics.draw(PiecesSprites, PieceQuads['n'], 6 * S, 0 * S, 0, F)
-    love.graphics.draw(PiecesSprites, PieceQuads['N'], 1 * S, 7 * S, 0, F)
-    love.graphics.draw(PiecesSprites, PieceQuads['N'], 6 * S, 7 * S, 0, F)
-    love.graphics.draw(PiecesSprites, PieceQuads['b'], 2 * S, 0 * S, 0, F)
-    love.graphics.draw(PiecesSprites, PieceQuads['b'], 5 * S, 0 * S, 0, F)
-    love.graphics.draw(PiecesSprites, PieceQuads['B'], 2 * S, 7 * S, 0, F)
-    love.graphics.draw(PiecesSprites, PieceQuads['B'], 5 * S, 7 * S, 0, F)
-    love.graphics.draw(PiecesSprites, PieceQuads['q'], 3 * S, 0 * S, 0, F)
-    love.graphics.draw(PiecesSprites, PieceQuads['Q'], 3 * S, 7 * S, 0, F)
-    love.graphics.draw(PiecesSprites, PieceQuads['k'], 4 * S, 0 * S, 0, F)
-    love.graphics.draw(PiecesSprites, PieceQuads['K'], 4 * S, 7 * S, 0, F)
-end
-
 function game.draw_piece(piece_quad, file, rank)
     local f = file - 1
     local r = 8 - rank
@@ -454,11 +409,9 @@ end
 
 function game.draw_ratings_graph(ratings, x, y, width, height)
     love.graphics.setFont(RatingFont)
-
     if #ratings > 20 then
         ratings = utils.get_last_n_items(ratings, 20) -- only graph the last 20
     end
-
     local lastRating = ratings[#ratings]
     -- Draw the Y-axis label
     love.graphics.setColor(0, 0, 0) -- White for text
@@ -468,33 +421,22 @@ function game.draw_ratings_graph(ratings, x, y, width, height)
     local maxRating = ratings[1]
     for i = 2, #ratings do -- this is necessary because the supported version of lua
         -- used by love doesn't have proper min and max :|
-        if ratings[i] < minRating then
-            minRating = ratings[i]
-        end
-        if ratings[i] > maxRating then
-            maxRating = ratings[i]
-        end
+        if ratings[i] < minRating then minRating = ratings[i] end
+        if ratings[i] > maxRating then maxRating = ratings[i] end
     end
 
     -- Calculate scaling factors
     local scaleX = width / (#ratings - 1)
     local scaleY = height / (utils.rating_round_up(maxRating) - utils.rating_round_down(minRating))
-
     -- Draw the graph background
     love.graphics.setColor(0.2, 0.2, 0.2)
     love.graphics.rectangle("fill", x, y, width, height)
-
     -- Calculate a dynamic guide line interval
     local range = maxRating - minRating
-    --game.debug("Range between min and max rating: " .. range)
-
-    -- local numGuides = 4
     local graphLineYInterval = math.floor(range / 4)
     if range < 10 then
-        -- numGuides = 1
         graphLineYInterval = 5
     end
-    --game.debug("guideline Y interval: " .. graphLineYInterval)
 
     -- Draw horizontal guide lines and labels
     love.graphics.setColor(0.5, 0.5, 0.5) -- Gray for guide lines
@@ -505,7 +447,6 @@ function game.draw_ratings_graph(ratings, x, y, width, height)
         love.graphics.print(ratingLevel, x - 50, yLine - 10) -- Adjust position for label
     end
 
-
     -- Draw the line graph
     for i = 2, #ratings do
         -- Calculate the positions of the current and previous points
@@ -513,7 +454,6 @@ function game.draw_ratings_graph(ratings, x, y, width, height)
         local y1 = y + height - (ratings[i - 1] - minRating) * scaleY
         local x2 = x + (i - 1) * scaleX
         local y2 = y + height - (ratings[i] - minRating) * scaleY
-
         -- Determine the line color based on whether the rating increased or decreased
         if ratings[i] > ratings[i - 1] then
             love.graphics.setColor(0, 1, 0) -- Green for increase
@@ -522,10 +462,8 @@ function game.draw_ratings_graph(ratings, x, y, width, height)
         else
             love.graphics.setColor(1, 1, 1) -- White for no change
         end
-        -- Draw the line segment
         love.graphics.line(x1, y1, x2, y2)
     end
-    -- Reset the color to white (optional)
     love.graphics.setColor(1, 1, 1)
 end
 
@@ -564,10 +502,8 @@ function game.draw_puzzle_information()
     love.graphics.setFont(WhoseTurnFont)
     if WhitesPlay then
         love.graphics.print("White plays", reference_x, reference_y)
-        --game.draw_piece(PieceQuads["P"], 10, 4)
     else
         love.graphics.print("Black plays", reference_x, reference_y)
-        --game.draw_piece(PieceQuads["p"], 10, 4)
     end
     reference_y = reference_y + 20
     love.graphics.setFont(LabelFont)
@@ -686,7 +622,6 @@ function game.start_move(move, duration)
     end
 
     PieceMoving.quad = PieceQuads[PieceMoving.piece]
-
     CurrentBoard[PieceMoving.target_file][PieceMoving.target_rank] = ""
     CurrentBoard[PieceMoving.origin_file][PieceMoving.origin_rank] = ""
     PieceMoving.x = (PieceMoving.origin_file - 1) * S
@@ -696,7 +631,6 @@ function game.start_move(move, duration)
     PieceMoving.duration = duration
     PieceMoving.elapsed = 0
     WhitesPlay = not WhitesPlay
-
     SelectedSquare = { file = PieceMoving.origin_file, rank = PieceMoving.origin_rank }
     NewSquare = { file = PieceMoving.target_file, rank = PieceMoving.target_rank }
     IsBlinking = true
@@ -722,7 +656,6 @@ function game.load_random_puzzle()
         local randomIndex = math.random(#options)
         local randomPuzzle = options[randomIndex]
         local values = utils.split(randomPuzzle, ',')
-
 
         while game.puzzle_id_in_resolved_puzzles(values[1]) do
             randomIndex = math.random(#options)
@@ -758,7 +691,6 @@ function game.load_FEN_to_board(fen)
     CurrentBoard = game.empty_board()
     local rank = 8
     local file_index = 1
-
     local space_pos = fen:find(" ")
     local board_fen = fen:sub(1, space_pos - 1)
 
@@ -770,7 +702,6 @@ function game.load_FEN_to_board(fen)
         elseif char:match("%d") then
             file_index = file_index + tonumber(char)
         elseif PieceQuads[char] then
-            -- print("file: " .. file_index .. ", rank: " .. rank)
             CurrentBoard[file_index][rank] = char
             file_index = file_index + 1
         end
@@ -803,7 +734,7 @@ end
 
 function game.squares_to_move(initial_square, final_square)
     -- transform the selected squares into UCI format
-    local files = { 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h' }
+    -- local files = { 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h' }
     local origin_square = files[initial_square.file] .. initial_square.rank
     local target_square = files[final_square.file] .. final_square.rank
     local user_move = origin_square .. target_square
@@ -902,7 +833,7 @@ function game.board_clicked(file, rank)
     elseif SelectedSquare ~= nil and file == SelectedSquare.file and rank == SelectedSquare.rank then
         game.debug("same square selected, deselecting it")
         SelectedSquare = nil
-    elseif game.new_of_same_color_selected(selected_piece) then -- one piece was selected, but another of the same color
+    elseif game.valid_piece_turn(selected_piece) then -- one piece was selected, but another of the same color
         -- was selected, select the new one
         SelectedSquare = { file = file, rank = rank }
         PieceMoving.quad = PieceQuads[selected_piece]
@@ -947,7 +878,7 @@ function game.board_clicked(file, rank)
     end
 end
 
-function game.check_level_selector_clicked(x, y)
+function game.check_buttons_clicked(x, y)
     -- check if a menu was clicked
     if LevelDropdown.isOpen == false then -- if the dropdown is open, button should not work
         for _, btn in ipairs(Main_menu.buttons) do
